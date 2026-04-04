@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>YouTube Clone</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+
+<style>
+html {
+  scroll-behavior: smooth;
+}
+</style>
+</head>
+
+<body class="bg-[#0f0f0f] text-white">
+
+<!-- HEADER -->
+<header class="sticky top-0 z-50 bg-[#202020] px-4 py-3 flex items-center gap-4">
+
+  <!-- LOGO -->
+  <div class="flex items-center gap-2 cursor-pointer" onclick="location.reload()">
+    <img 
+      src="https://upload.wikimedia.org/wikipedia/commons/b/b8/YouTube_Logo_2017.svg"
+      class="h-6"
+    >
+  </div>
+
+  <!-- SEARCH -->
+  <div class="w-full max-w-2xl mx-auto relative">
+    <input 
+      id="search"
+      type="text"
+      placeholder="Search videos..."
+      class="w-full px-4 py-2 bg-[#121212] border border-gray-700 rounded focus:outline-none"
+    >
+
+    <!-- Suggestions -->
+    <div id="suggestions" 
+      class="absolute w-full bg-[#222] mt-1 rounded hidden max-h-60 overflow-y-auto shadow-lg">
+    </div>
+  </div>
+
+</header>
+
+<!-- GRID -->
+<main class="p-4">
+  <div id="grid"
+    class="grid gap-5 
+           grid-cols-1 
+           sm:grid-cols-2 
+           md:grid-cols-3 
+           lg:grid-cols-4">
+  </div>
+</main>
+
+<script src="list.js"></script>
+
+<script>
+const grid = document.getElementById("grid");
+const search = document.getElementById("search");
+const suggestions = document.getElementById("suggestions");
+
+// 🎯 Shuffle
+function shuffleArray(array) {
+  return array.sort(() => Math.random() - 0.5);
+}
+
+// 🔥 Fresh feed generator
+function getFreshFeed() {
+  const shuffled = shuffleArray([...videoList]);
+
+  return shuffled.map(v => ({
+    ...v,
+    title: v.title + (Math.random() > 0.7 ? " 🔥" : "")
+  }));
+}
+
+// 🎬 Render videos
+function renderVideos(list) {
+  grid.innerHTML = "";
+
+  list.forEach(video => {
+    const card = document.createElement("div");
+    card.className = "cursor-pointer";
+
+    card.innerHTML = `
+      <div class="w-full">
+        
+        <!-- Thumbnail -->
+        <div class="relative w-full aspect-video overflow-hidden rounded-xl">
+          <img src="${video.thumbnail}" 
+               class="w-full h-full object-cover hover:scale-105 transition duration-300">
+
+          <!-- Duration -->
+          <span class="absolute bottom-1 right-1 bg-black/80 text-xs px-1 rounded">
+            ${video.duration}
+          </span>
+        </div>
+
+        <!-- TITLE (bigger like h4) -->
+        <h4 class="mt-2 text-base font-semibold leading-snug line-clamp-2">
+          ${video.title}
+        </h4>
+
+      </div>
+    `;
+
+    card.onclick = () => {
+      window.location.href = "watch.html?id=" + video.id;
+    };
+
+    grid.appendChild(card);
+  });
+}
+
+// ✅ Initial load (auto refresh)
+let currentFeed = getFreshFeed();
+renderVideos(currentFeed);
+
+// 🔄 Refresh when tab active again
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) {
+    currentFeed = getFreshFeed();
+    renderVideos(currentFeed);
+  }
+});
+
+// 📜 Infinite scroll
+window.addEventListener("scroll", () => {
+  if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 200) {
+    const more = getFreshFeed();
+    currentFeed = [...currentFeed, ...more];
+    renderVideos(currentFeed);
+  }
+});
+
+// 🔍 Search
+search.addEventListener("input", () => {
+  const value = search.value.toLowerCase();
+
+  const filtered = videoList.filter(v =>
+    v.title.toLowerCase().includes(value)
+  );
+
+  renderVideos(filtered);
+
+  suggestions.innerHTML = "";
+
+  if (value) {
+    suggestions.classList.remove("hidden");
+
+    filtered.forEach(v => {
+      const div = document.createElement("div");
+
+      div.className = "p-2 hover:bg-[#333] cursor-pointer text-sm";
+      div.textContent = v.title;
+
+      div.onclick = () => {
+        window.location.href = "watch.html?id=" + v.id;
+      };
+
+      suggestions.appendChild(div);
+    });
+
+  } else {
+    suggestions.classList.add("hidden");
+  }
+});
+</script>
+
+</body>
+</html>
