@@ -174,5 +174,12 @@ const videoList = [
     title: "PHYSICAL WORLD AND MEASUREMENT | WBJEE Crash Course Physics FREE Class",
     thumbnail: "https://img.youtube.com/vi/2K7zUjC3Yt8/maxresdefault.jpg",
     duration: ""
+  },
+    {
+    no: 25,
+    id: "hEo7DiXrUAw",
+    title: "Launching Lakshya Bangla Sem 3 + SEM 4 (WBJEE+Biology) 2027 💯 | WBCHSE HS 2027",
+    thumbnail: "https://img.youtube.com/vi/hEo7DiXrUAw/maxresdefault.jpg",
+    duration: "Live"
   }
 ];
