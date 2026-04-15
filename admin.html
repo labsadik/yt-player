@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Dashboard</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+  /* Custom Scrollbar */
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: #0f0f0f; }
+  ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: #555; }
+</style>
+</head>
+
+<body class="bg-[#0f0f0f] text-white font-sans antialiased min-h-screen flex flex-col">
+
+<!-- TOP BAR -->
+<nav class="sticky top-0 z-40 bg-[#0f0f0f]/95 backdrop-blur border-b border-gray-800 px-6 py-4">
+  <div class="max-w-7xl mx-auto flex justify-between items-center">
+    
+    <!-- Logo -->
+    <div class="flex items-center gap-3">
+      <i class="fa-solid fa-shield-halved text-red-600 text-2xl"></i>
+      <h1 class="text-xl font-bold tracking-wide hidden sm:block">Admin Dashboard</h1>
+    </div>
+
+    <!-- Admin Profile & Logout -->
+    <div class="flex items-center gap-4">
+      <div class="text-right hidden md:block">
+        <p id="adminName" class="text-sm font-bold text-white">Loading...</p>
+        <p id="adminEmail" class="text-xs text-gray-400">...</p>
+      </div>
+      
+      <div id="adminAvatar" class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center font-bold text-lg shadow-lg border border-gray-700">
+        A
+      </div>
+
+      <button onclick="logout()" class="ml-2 bg-[#1f1f1f] hover:bg-red-600/20 hover:text-red-500 border border-gray-700 text-gray-300 px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2">
+        <i class="fa-solid fa-right-from-bracket"></i> <span class="hidden sm:inline">Logout</span>
+      </button>
+    </div>
+
+  </div>
+</nav>
+
+<!-- MAIN CONTENT -->
+<div class="flex-grow p-4 sm:p-6 max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+  <!-- LEFT COLUMN: ADD FORM (4 Cols) -->
+  <div class="lg:col-span-4 xl:col-span-3">
+    <div class="bg-[#1f1f1f] border border-gray-800 p-5 rounded-xl shadow-lg sticky top-24">
+      <h2 class="text-lg font-bold mb-4 flex items-center gap-2 text-blue-500">
+        <i class="fa-solid fa-plus-circle"></i> Add Video
+      </h2>
+
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-gray-500 uppercase mb-1">YouTube ID</label>
+          <input id="videoId" class="w-full bg-[#0f0f0f] border border-gray-700 rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none transition text-sm" placeholder="e.g. dQw4w9WgXcQ">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Title</label>
+          <input id="title" class="w-full bg-[#0f0f0f] border border-gray-700 rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none transition text-sm" placeholder="Video Title">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Duration</label>
+          <input id="duration" class="w-full bg-[#0f0f0f] border border-gray-700 rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none transition text-sm" placeholder="10:00">
+        </div>
+
+        <button onclick="addVideo()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-lg transition mt-2 shadow-lg shadow-blue-900/20">
+          Publish Video
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT COLUMN: VIDEO LIST (8 Cols) -->
+  <div class="lg:col-span-8 xl:col-span-9">
+    <div class="bg-[#1f1f1f] border border-gray-800 rounded-xl shadow-lg overflow-hidden flex flex-col h-[calc(100vh-140px)]">
+      
+      <!-- List Header -->
+      <div class="p-4 border-b border-gray-800 flex justify-between items-center bg-[#252525]">
+        <h2 class="font-bold flex items-center gap-2">
+          <i class="fa-solid fa-film text-gray-400"></i> Video Library
+        </h2>
+        <span id="totalCount" class="bg-gray-800 text-xs px-2 py-1 rounded text-gray-300 border border-gray-700">0 Videos</span>
+      </div>
+
+      <!-- Scrollable List -->
+      <div class="overflow-y-auto p-2 space-y-2 flex-grow" id="videosList">
+        <!-- Skeleton Loader -->
+        <div class="p-4 text-center text-gray-500">
+          <i class="fa-solid fa-circle-notch fa-spin text-2xl"></i>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<!-- EDIT MODAL -->
+<div id="editModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center opacity-0 transition-opacity duration-300">
+  <div class="bg-[#1f1f1f] border border-gray-700 p-6 rounded-xl w-full max-w-md shadow-2xl transform scale-95 transition-transform duration-300" id="editBox">
+    <h2 class="text-xl font-bold mb-4">Edit Video Details</h2>
+
+    <div class="space-y-3">
+      <input id="editDbId" type="hidden"> <!-- MongoDB _id -->
+      
+      <div>
+        <label class="text-xs text-gray-500 uppercase font-bold">YouTube ID</label>
+        <input id="editYtId" class="w-full bg-[#0f0f0f] border border-gray-700 rounded px-3 py-2 mt-1 focus:border-blue-500 outline-none">
+      </div>
+      
+      <div>
+        <label class="text-xs text-gray-500 uppercase font-bold">Title</label>
+        <input id="editTitle" class="w-full bg-[#0f0f0f] border border-gray-700 rounded px-3 py-2 mt-1 focus:border-blue-500 outline-none">
+      </div>
+
+      <div>
+        <label class="text-xs text-gray-500 uppercase font-bold">Duration</label>
+        <input id="editDuration" class="w-full bg-[#0f0f0f] border border-gray-700 rounded px-3 py-2 mt-1 focus:border-blue-500 outline-none">
+      </div>
+    </div>
+
+    <div class="flex gap-3 mt-6">
+      <button onclick="saveEdit()" class="flex-1 bg-blue-600 hover:bg-blue-700 py-2 rounded font-bold transition">Save</button>
+      <button onclick="closeModal()" class="flex-1 bg-gray-700 hover:bg-gray-600 py-2 rounded transition">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = "http://localhost:5000/api/videos";
+
+// ================= 1. HIGH SECURITY CHECK =================
+function checkAuth() {
+  const token = localStorage.getItem("token");
+  const userStr = localStorage.getItem("user");
+
+  // Must have token AND user data
+  if (!token || !userStr) {
+    window.location.href = "auth.html";
+    return null;
+  }
+
+  const user = JSON.parse(userStr);
+
+  // STRICT ROLE CHECK
+  if (user.role !== 'admin') {
+    alert("⛔ Access Denied: Administrators Only.");
+    window.location.href = "index.html"; // Kick to home
+    return null;
+  }
+
+  // ✅ UPDATE UI WITH REAL DATA
+  document.getElementById("adminName").innerText = user.name;
+  document.getElementById("adminEmail").innerText = user.email;
+  document.getElementById("adminAvatar").innerText = user.name.charAt(0).toUpperCase();
+  
+  return token;
+}
+
+const token = checkAuth();
+
+// ================= 2. LOAD VIDEOS (LIST VIEW) =================
+async function loadVideos() {
+  try {
+    const res = await fetch(API);
+    const data = await res.json();
+    
+    // Handle response structure
+    const videos = Array.isArray(data) ? data : (data.videos || []);
+    
+    document.getElementById("totalCount").innerText = `${videos.length} Videos`;
+    renderList(videos);
+  } catch (err) {
+    console.error(err);
+    document.getElementById("videosList").innerHTML = `<div class="text-red-500 text-center py-4">Error connecting to backend</div>`;
+  }
+}
+
+function renderList(videos) {
+  const container = document.getElementById("videosList");
+  container.innerHTML = "";
+
+  if(videos.length === 0) {
+    container.innerHTML = `<div class="text-gray-500 text-center py-10">No videos found. Add one on the left.</div>`;
+    return;
+  }
+
+  videos.forEach(v => {
+    const div = document.createElement("div");
+    // List Item Styling
+    div.className = "flex items-center gap-4 bg-[#0f0f0f] p-3 rounded-lg border border-gray-800 hover:border-gray-600 transition group";
+    
+    div.innerHTML = `
+      <!-- Thumbnail -->
+      <div class="relative w-32 sm:w-40 flex-shrink-0 aspect-video bg-black rounded overflow-hidden">
+        <img src="${v.thumbnail}" class="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition">
+        <span class="absolute bottom-1 right-1 bg-black/80 text-[10px] px-1 rounded text-white font-mono">${v.duration}</span>
+      </div>
+      
+      <!-- Info -->
+      <div class="flex-1 min-w-0">
+        <h3 class="font-bold text-sm sm:text-base truncate text-gray-200 group-hover:text-white mb-1">${v.title}</h3>
+        <div class="flex flex-wrap gap-3 text-xs text-gray-500 font-mono">
+          <span><i class="fa-brands fa-youtube mr-1"></i>${v.id}</span>
+          <span class="hidden sm:inline">• DB: ${v._id.substring(0,8)}...</span>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="flex flex-col sm:flex-row gap-2">
+        <button onclick='openEdit(${JSON.stringify(v).replace(/'/g, "&apos;")})' 
+          class="bg-gray-800 hover:bg-blue-600 text-blue-400 hover:text-white w-8 h-8 sm:w-auto sm:px-3 rounded flex items-center justify-center transition" title="Edit">
+          <i class="fa-solid fa-pen"></i> <span class="hidden sm:inline ml-1">Edit</span>
+        </button>
+        
+        <button onclick="deleteVideo('${v._id}')" 
+          class="bg-gray-800 hover:bg-red-600 text-red-400 hover:text-white w-8 h-8 sm:w-auto sm:px-3 rounded flex items-center justify-center transition" title="Delete">
+          <i class="fa-solid fa-trash"></i> <span class="hidden sm:inline ml-1">Del</span>
+        </button>
+      </div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+// ================= 3. ADD VIDEO =================
+async function addVideo() {
+  const id = document.getElementById("videoId").value.trim();
+  const title = document.getElementById("title").value.trim();
+  const duration = document.getElementById("duration").value.trim();
+
+  if(!id || !title) return alert("ID and Title are required");
+
+  const btn = document.querySelector("button[onclick='addVideo()']");
+  const originalText = btn.innerText;
+  btn.innerText = "Publishing...";
+  btn.disabled = true;
+
+  try {
+    const res = await fetch(API, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": token
+      },
+      body: JSON.stringify({ id, title, duration })
+    });
+
+    if(!res.ok) throw new Error("Failed");
+
+    // Reset Form
+    document.getElementById("videoId").value = "";
+    document.getElementById("title").value = "";
+    document.getElementById("duration").value = "";
+    
+    loadVideos(); 
+
+  } catch(err) {
+    alert("Error adding video");
+  } finally {
+    btn.innerText = originalText;
+    btn.disabled = false;
+  }
+}
+
+// ================= 4. DELETE =================
+async function deleteVideo(dbId) {
+  if(!confirm("Are you sure? This cannot be undone.")) return;
+
+  try {
+    await fetch(`${API}/${dbId}`, {
+      method: "DELETE",
+      headers: { "Authorization": token }
+    });
+    loadVideos();
+  } catch(err) {
+    alert("Delete failed");
+  }
+}
+
+// ================= 5. EDIT LOGIC =================
+function openEdit(videoObj) {
+  document.getElementById("editDbId").value = videoObj._id;
+  document.getElementById("editYtId").value = videoObj.id;
+  document.getElementById("editTitle").value = videoObj.title;
+  document.getElementById("editDuration").value = videoObj.duration;
+  
+  const modal = document.getElementById("editModal");
+  modal.classList.remove("hidden");
+  // Animation trigger
+  setTimeout(() => {
+    modal.classList.remove("opacity-0");
+    document.getElementById("editBox").classList.remove("scale-95");
+    document.getElementById("editBox").classList.add("scale-100");
+  }, 10);
+}
+
+function closeModal() {
+  const modal = document.getElementById("editModal");
+  modal.classList.add("opacity-0");
+  document.getElementById("editBox").classList.add("scale-95");
+  setTimeout(() => {
+    modal.classList.add("hidden");
+  }, 300);
+}
+
+async function saveEdit() {
+  const dbId = document.getElementById("editDbId").value;
+  const id = document.getElementById("editYtId").value;
+  const title = document.getElementById("editTitle").value;
+  const duration = document.getElementById("editDuration").value;
+
+  try {
+    await fetch(`${API}/${dbId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": token
+      },
+      body: JSON.stringify({ id, title, duration })
+    });
+    
+    closeModal();
+    loadVideos();
+  } catch(err) {
+    alert("Update failed");
+  }
+}
+
+// ================= 6. LOGOUT =================
+function logout() {
+  localStorage.clear();
+  window.location.href = "auth.html";
+}
+
+// INIT
+loadVideos();
+</script>
+
+</body>
+</html>

@@ -4,414 +4,213 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>YouTube Clone</title>
-
-<!-- Tailwind CSS -->
 <script src="https://cdn.tailwindcss.com"></script>
-
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <style>
-  /* Smooth Scroll */
-  html {
-    scroll-behavior: smooth;
-  }
-
-  /* Skeleton Shimmer Animation */
+  ::-webkit-scrollbar { width: 8px; }
+  ::-webkit-scrollbar-track { background: #0f0f0f; }
+  ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
   @keyframes shimmer {
     0% { background-position: -200% 0; }
     100% { background-position: 200% 0; }
   }
-
   .skeleton {
-    background: linear-gradient(90deg, #2a2a2a 25%, #3a3a3a 50%, #2a2a2a 75%);
+    background: linear-gradient(90deg, #1f1f1f 25%, #2a2a2a 50%, #1f1f1f 75%);
     background-size: 200% 100%;
     animation: shimmer 1.5s infinite;
   }
-
-  /* Hide scrollbar for clean UI */
-  .no-scrollbar::-webkit-scrollbar { display: none; }
-  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 </style>
 </head>
-
-<body class="bg-[#0f0f0f] text-white min-h-screen flex flex-col">
+<body class="bg-[#0f0f0f] text-white font-sans antialiased">
 
 <!-- HEADER -->
-<header class="sticky top-0 z-50 bg-[#202020] border-b border-gray-800 px-4 py-3 flex items-center justify-between gap-4">
-  
-  <!-- Left Section: Logo + Favorite Icon -->
-  <div class="flex items-center gap-3">
-    <!-- LOGO -->
-    <div class="flex items-center gap-2 cursor-pointer shrink-0" onclick="location.reload()">
-      <img src="https://upload.wikimedia.org/wikipedia/commons/b/b8/YouTube_Logo_2017.svg" class="h-5 sm:h-6" alt="Logo">
+<header class="sticky top-0 z-40 flex justify-between items-center px-4 py-3 bg-[#0f0f0f]/95 backdrop-blur border-b border-gray-800">
+  <div class="flex items-center gap-2 cursor-pointer" onclick="window.location.href='index.html'">
+    <i class="fa-brands fa-youtube text-red-600 text-3xl"></i>
+    <span class="font-bold text-xl tracking-tight hidden sm:block">YouClone</span>
+  </div>
+
+  <!-- SEARCH -->
+  <div class="flex-1 max-w-xl mx-4">
+    <div class="relative group">
+      <input id="search" type="text"
+        class="w-full bg-[#121212] border border-gray-700 rounded-full px-4 py-2 pl-10 focus:outline-none focus:border-blue-500 transition-colors placeholder-gray-500"
+        placeholder="Search videos...">
+      <i class="fa-solid fa-search absolute left-3 top-3 text-gray-500"></i>
     </div>
-
-    <!-- Favorite Icon -->
-    <button class="text-gray-400 hover:text-red-500 transition-colors p-1" title="Favorites" aria-label="Favorites">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-      </svg>
-    </button>
   </div>
 
-  <!-- SEARCH (Center) -->
-  <div class="w-full max-w-2xl relative hidden sm:block">
-    <input 
-      id="search"
-      type="text"
-      placeholder="Search videos..."
-      class="w-full px-4 py-2 bg-[#121212] border border-gray-700 rounded-full focus:outline-none focus:border-blue-500 transition"
-    >
-
-    <!-- Suggestions Dropdown -->
-    <div id="suggestions" class="absolute w-full bg-[#222] mt-2 rounded-lg hidden max-h-60 overflow-y-auto shadow-2xl border border-gray-700 z-50"></div>
-  </div>
-
-  <!-- Right Section: Profile Avatar -->
-  <div class="flex items-center shrink-0">
-    <button class="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white font-semibold text-sm sm:text-base hover:ring-2 hover:ring-blue-400 transition-all cursor-pointer" title="Profile" aria-label="Profile">
-      U
-    </button>
+  <!-- USER -->
+  <div id="userBox" class="flex items-center gap-3 cursor-pointer hover:bg-[#272727] p-1.5 pr-3 rounded-full transition-colors">
+    <div id="avatar" class="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center text-sm font-bold shadow-lg">G</div>
+    <span id="username" class="text-sm font-medium hidden sm:block">Guest</span>
   </div>
 </header>
 
 <!-- MAIN GRID -->
-<main class="flex-1 p-4">
-  <div id="grid" class="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-    <!-- Videos will be injected here -->
+<main class="p-4 sm:p-6 min-h-screen">
+  <div id="grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-4 gap-y-6">
+    <!-- Videos injected here -->
   </div>
   
-  <!-- Infinite Scroll Sentinel -->
-  <div id="sentinel" class="h-10 mt-4"></div>
-  
-  <!-- End Message (shown when all loaded) -->
-  <div id="end-message" class="hidden text-center py-8 text-gray-500">
-    <i class="fa-solid fa-check-circle text-4xl mb-3 block"></i>
-    <p class="text-lg font-medium">You've seen all videos!</p>
-    <p class="text-sm mt-2">Refresh for a new random order 🔄</p>
+  <!-- Loading States -->
+  <div id="loader" class="hidden py-8 text-center">
+    <i class="fa-solid fa-circle-notch fa-spin text-2xl text-red-600"></i>
   </div>
+  
+  <div id="endMsg" class="hidden py-8 text-center text-gray-500">No more videos found</div>
+  <div id="errorMsg" class="hidden py-8 text-center text-red-500">Failed to connect to backend.</div>
 </main>
 
-<!-- Scripts -->
-<script src="list.js"></script>
+<!-- MODALS (Login & Profile) -->
+<div id="loginPopup" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center">
+  <div class="bg-[#1f1f1f] border border-gray-700 p-8 rounded-2xl w-full max-w-sm text-center shadow-2xl">
+    <h2 class="text-2xl font-bold mb-2">Login Required</h2>
+    <p class="text-gray-400 mb-6 text-sm">Please sign in to watch videos.</p>
+    <button onclick="goToAuth()" class="bg-white text-black font-bold px-4 py-3 rounded-full w-full mb-3 hover:bg-gray-200 transition">Sign In</button>
+    <button onclick="closePopup('loginPopup')" class="text-gray-400 text-sm hover:text-white transition">Maybe Later</button>
+  </div>
+</div>
+
+<div id="profilePopup" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center">
+  <div class="bg-[#1f1f1f] border border-gray-700 p-6 rounded-xl w-80 text-center shadow-2xl relative">
+    <button onclick="closePopup('profilePopup')" class="absolute top-3 right-3 text-gray-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+    <div id="profileAvatar" class="w-20 h-20 mx-auto rounded-full bg-blue-600 flex items-center justify-center text-3xl font-bold mb-3 shadow-lg border-4 border-[#1f1f1f]">U</div>
+    <h2 id="profileName" class="font-bold text-xl">User Name</h2>
+    <p id="profileEmail" class="text-gray-400 text-sm mb-6 break-all">email@example.com</p>
+    <button onclick="logout()" class="w-full bg-[#272727] hover:bg-red-600/20 hover:text-red-500 text-white py-2 rounded-lg transition flex items-center justify-center gap-2">
+      <i class="fa-solid fa-right-from-bracket"></i> Logout
+    </button>
+  </div>
+</div>
 
 <script>
-/**
- * ============================================
- * YOUTUBE CLONE - NO DUPLICATES SYSTEM
- * 
- * FEATURES:
- * ✅ No duplicate videos EVER (tracks shown IDs)
- * ✅ Random order on EVERY page refresh
- * ✅ Infinite scroll loads ONLY unseen videos
- * ✅ Search shows unique results
- * 
- * HOW IT WORKS:
- * 1. Shuffled pool created on init (random order)
- * 2. Track shownVideoIds (Set) to prevent dupes
- * 3. loadMore() takes NEXT batch from pool
- * 4. Refresh = new shuffle = new random order!
- * ============================================
- */
+const API_URL = "http://localhost:5000/api/videos"; 
+const AUTH_URL = "auth.html";
 
-// --- STATE & CONFIG ---
-const grid = document.getElementById("grid");
-const searchInput = document.getElementById("search");
-const suggestionsBox = document.getElementById("suggestions");
-const sentinel = document.getElementById("sentinel");
-const endMessage = document.getElementById("end-message");
+let state = { page: 1, search: "", loading: false, hasMore: true, user: null, authTimer: null };
 
-let currentFeed = [];
-let isLoading = false;
-let shuffledPool = []; // Master shuffled list (randomized once per session)
-let shownVideoIds = new Set(); // Track which videos we've displayed
-let poolIndex = 0; // Current position in the pool
-const BATCH_SIZE = 12; // Videos per load
-
-// --- 1. SECURITY HELPER (XSS Prevention) ---
-function createSafeElement(tag, className, textContent = null) {
-  const el = document.createElement(tag);
-  if (className) el.className = className;
-  if (textContent) el.textContent = textContent;
-  return el;
-}
-
-// --- 2. SKELETON LOADER ---
-function showSkeletons(count = 12) {
-  grid.innerHTML = "";
-  const frag = document.createDocumentFragment();
-  
-  for (let i = 0; i < count; i++) {
-    const card = document.createElement("div");
-    card.className = "flex flex-col gap-2";
-    card.innerHTML = `
-      <div class="w-full aspect-video rounded-xl skeleton"></div>
-      <div class="h-4 w-3/4 rounded skeleton"></div>
-      <div class="h-4 w-1/2 rounded skeleton"></div>
-    `;
-    frag.appendChild(card);
-  }
-  grid.appendChild(frag);
-}
-
-// --- 3. DATA LOGIC (NO DUPLICATES!) ---
-
-// Fisher-Yates shuffle for true randomness
-function shuffleArray(array) {
-  for (let i = array.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [array[i], array[j]] = [array[j], array[i]];
-  }
-  return array;
-}
-
-// ⭐ Initialize/reset the shuffled pool (called on EVERY load/refresh!)
-function initializePool() {
-  // Create fresh shuffled copy of ALL videos
-  shuffledPool = shuffleArray([...videoList]);
-  shownVideoIds = new Set(); // Reset tracking
-  poolIndex = 0; // Start from beginning
-  
-  console.log(`🎲 Pool initialized: ${shuffledPool.length} videos in random order`);
-  console.log('📋 First 5 videos:', shuffledPool.slice(0, 5).map(v => v.title));
-}
-
-// Get next batch of UNIQUE videos (never seen before)
-function getNextBatch(size = BATCH_SIZE) {
-  const batch = [];
-  let count = 0;
-  
-  // Pull from pool until we have enough OR pool is empty
-  while (count < size && poolIndex < shuffledPool.length) {
-    const video = shuffledPool[poolIndex];
-    
-    // Double-check this ID hasn't been shown (extra safety)
-    if (!shownVideoIds.has(video.id)) {
-      batch.push(video);
-      shownVideoIds.add(video.id); // Mark as shown
-      count++;
-    }
-    
-    poolIndex++; // Move to next in pool
-  }
-  
-  return batch;
-}
-
-// Check if there are more videos to show
-function hasMoreVideos() {
-  return poolIndex < shuffledPool.length;
-}
-
-// Get total remaining count
-function getRemainingCount() {
-  return shuffledPool.length - poolIndex;
-}
-
-// Show/hide "all loaded" message
-function showEndMessage(show) {
-  if (show) {
-    endMessage.classList.remove('hidden');
+/* ================= AUTH LOGIC ================= */
+function initAuth() {
+  const token = localStorage.getItem("token");
+  const storedUser = localStorage.getItem("user");
+  if (token && storedUser) {
+    state.user = JSON.parse(storedUser);
+    updateUIUser(state.user);
   } else {
-    endMessage.classList.add('hidden');
+    setGuestMode();
+    state.authTimer = setTimeout(() => { if (!state.user) showPopup("loginPopup"); }, 5 * 60 * 1000);
   }
 }
 
-// --- 4. RENDERING (Optimized with DocumentFragment) ---
-function renderVideos(list, appendMode = false) {
-  if (!appendMode) grid.innerHTML = ""; // Clear only if not appending
-  
-  const frag = document.createDocumentFragment();
+function updateUIUser(user) {
+  const name = user.name || "User";
+  document.getElementById("username").innerText = name;
+  document.getElementById("avatar").innerText = name.charAt(0).toUpperCase();
+  document.getElementById("avatar").classList.replace("bg-gray-600", "bg-blue-600");
+  document.getElementById("profileName").innerText = name;
+  document.getElementById("profileEmail").innerText = user.email || "";
+  document.getElementById("profileAvatar").innerText = name.charAt(0).toUpperCase();
+}
 
-  list.forEach(video => {
+function setGuestMode() {
+  state.user = null;
+  document.getElementById("username").innerText = "Guest";
+  document.getElementById("avatar").innerText = "G";
+  document.getElementById("avatar").classList.add("bg-gray-600");
+  document.getElementById("avatar").classList.remove("bg-blue-600");
+}
+
+function goToAuth() { window.location.href = AUTH_URL; }
+function logout() { localStorage.clear(); location.reload(); }
+document.getElementById("userBox").addEventListener("click", () => { if (state.user) showPopup("profilePopup"); else showPopup("loginPopup"); });
+function showPopup(id) { document.getElementById(id).classList.remove("hidden"); }
+function closePopup(id) { document.getElementById(id).classList.add("hidden"); }
+
+// CLICK VIDEO -> GO TO WATCH PAGE
+function handleVideoClick(videoId) {
+  if (!state.user) { showPopup("loginPopup"); return; }
+  window.location.href = `watch.html?id=${videoId}`;
+}
+
+/* ================= VIDEO SYSTEM ================= */
+async function fetchVideos(reset = false) {
+  if (state.loading || !state.hasMore) return;
+  state.loading = true;
+  
+  if (reset) {
+    state.page = 1;
+    state.hasMore = true;
+    document.getElementById("grid").innerHTML = "";
+    document.getElementById("endMsg").classList.add("hidden");
+    document.getElementById("errorMsg").classList.add("hidden");
+    showSkeletons(); // ONLY show skeletons on reset/search
+  } else {
+    document.getElementById("loader").classList.remove("hidden");
+  }
+
+  try {
+    const res = await fetch(`${API_URL}?page=${state.page}&limit=12&search=${encodeURIComponent(state.search)}`);
+    if (!res.ok) throw new Error("Backend Error");
+    const data = await res.json();
+    
+    if (data.videos && data.videos.length > 0) {
+      if(state.page === 1) removeSkeletons(); // Remove skeletons once data arrives
+      renderVideos(data.videos);
+      state.page++;
+    } else {
+      state.hasMore = false;
+      if(state.page === 1) removeSkeletons();
+      document.getElementById("endMsg").classList.remove("hidden");
+    }
+  } catch (err) {
+    console.error(err);
+    if(state.page === 1) { removeSkeletons(); document.getElementById("errorMsg").classList.remove("hidden"); }
+  } finally {
+    state.loading = false;
+    document.getElementById("loader").classList.add("hidden");
+  }
+}
+
+function renderVideos(videos) {
+  const grid = document.getElementById("grid");
+  videos.forEach(v => {
     const card = document.createElement("div");
-    card.className = "cursor-pointer group flex flex-col gap-2";
-
-    // Thumbnail Container
-    const thumbContainer = document.createElement("div");
-    thumbContainer.className = "relative w-full aspect-video overflow-hidden rounded-xl bg-neutral-800";
-    
-    const img = document.createElement("img");
-    img.src = video.thumbnail;
-    img.loading = "lazy"; // Native Lazy Loading
-    img.className = "w-full h-full object-cover group-hover:scale-105 transition duration-300";
-    img.alt = video.title;
-    
-    const duration = document.createElement("span");
-    duration.className = "absolute bottom-1 right-1 bg-black/80 text-xs px-1 rounded font-medium";
-    duration.textContent = video.duration;
-
-    thumbContainer.appendChild(img);
-    thumbContainer.appendChild(duration);
-
-    // Title (Secure)
-    const title = createSafeElement("h4", "mt-1 text-base sm:text-lg font-semibold leading-snug line-clamp-2 group-hover:text-blue-400 transition", video.title);
-
-    card.appendChild(thumbContainer);
-    card.appendChild(title);
-
-    card.onclick = () => {
-      window.location.href = "watch.html?id=" + video.id;
-    };
-
-    frag.appendChild(card);
+    card.className = "group cursor-pointer flex flex-col gap-2 fade-in";
+    card.onclick = () => handleVideoClick(v.id);
+    card.innerHTML = `
+      <div class="relative aspect-video rounded-xl overflow-hidden bg-[#1f1f1f]">
+        <img src="${v.thumbnail}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200">
+        <div class="absolute bottom-1 right-1 bg-black/80 text-white text-xs px-1.5 py-0.5 rounded font-medium">${v.duration || "0:00"}</div>
+      </div>
+      <div class="mt-1"><h3 class="font-bold text-sm leading-tight line-clamp-2 group-hover:text-white text-gray-100">${v.title}</h3></div>
+    `;
+    grid.appendChild(card);
   });
-
-  grid.appendChild(frag);
-  isLoading = false;
 }
 
-// --- 5. INFINITE SCROLL (Loads ONLY Unseen Videos!) ---
-const observer = new IntersectionObserver((entries) => {
-  if (entries[0].isIntersecting && !isLoading && hasMoreVideos()) {
-    loadMore();
-  }
-}, { threshold: 0.1 });
-
-function loadMore() {
-  if (!hasMoreVideos()) {
-    console.log('✅ All videos already loaded!');
-    showEndMessage(true);
-    observer.unobserve(sentinel); // Stop observing
-    return;
-  }
-  
-  isLoading = true;
-  
-  // Simulate network delay for professional feel
-  setTimeout(() => {
-    const nextBatch = getNextBatch(BATCH_SIZE);
-    
-    if (nextBatch.length > 0) {
-      currentFeed = [...currentFeed, ...nextBatch];
-      renderVideos(nextBatch, true); // Append mode
-      
-      console.log(`📦 Loaded ${nextBatch.length} more | Remaining: ${getRemainingCount()}`);
-      
-      // Check if this was the last batch
-      if (!hasMoreVideos()) {
-        console.log('✅ All videos loaded!');
-        showEndMessage(true);
-        observer.unobserve(sentinel);
-      }
-    }
-  }, 300);
+function showSkeletons() {
+  document.getElementById("grid").innerHTML = Array(8).fill(0).map(() => `
+    <div class="flex flex-col gap-2"><div class="aspect-video rounded-xl skeleton"></div><div class="h-4 w-3/4 rounded skeleton mt-1"></div></div>
+  `).join('');
 }
 
-// --- 6. SEARCH (Shows Unique Results) ---
-let searchTimeout;
-let isSearching = false;
+function removeSkeletons() {
+  if(document.querySelector('.skeleton')) document.getElementById("grid").innerHTML = "";
+}
 
-searchInput.addEventListener("input", () => {
-  clearTimeout(searchTimeout);
-  searchTimeout = setTimeout(() => {
-    const value = searchInput.value.toLowerCase().trim();
-    
-    if (value) {
-      isSearching = true;
-      showEndMessage(false);
-      
-      // Filter videos matching search
-      const filtered = videoList.filter(v => 
-        v.title.toLowerCase().includes(value)
-      );
-      
-      // Remove duplicates from filtered results (extra safety)
-      const uniqueFiltered = filtered.filter((v, idx, self) =>
-        idx === self.findIndex(t => t.id === v.id)
-      );
-      
-      renderVideos(uniqueFiltered);
-      showSuggestions(uniqueFiltered.slice(0, 5)); // Show top 5 suggestions
-    } else {
-      isSearching = false;
-      suggestionsBox.classList.add("hidden");
-      
-      // Restore main feed (continue where left off)
-      renderVideos(currentFeed);
-      
-      // Re-enable scroll if there's more content
-      if (hasMoreVideos()) {
-        observer.observe(sentinel);
-        showEndMessage(false);
-      } else {
-        showEndMessage(true);
-      }
-    }
-  }, 300); // Wait 300ms after user stops typing
+let debounceTimer;
+document.getElementById("search").addEventListener("input", (e) => {
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(() => { state.search = e.target.value; fetchVideos(true); }, 500);
 });
 
-function showSuggestions(list) {
-  suggestionsBox.innerHTML = "";
-  if (list.length === 0) {
-    suggestionsBox.classList.add("hidden");
-    return;
-  }
-  
-  suggestionsBox.classList.remove("hidden");
-  const frag = document.createDocumentFragment();
-
-  list.forEach(v => {
-    const div = createSafeElement("div", "p-3 hover:bg-[#333] cursor-pointer text-sm flex items-center gap-3");
-    
-    const icon = document.createElement("i");
-    icon.className = "fa-solid fa-search text-gray-500";
-    
-    const text = createSafeElement("span", "", v.title);
-    
-    div.appendChild(icon);
-    div.appendChild(text);
-    
-    div.onclick = () => {
-      window.location.href = "watch.html?id=" + v.id;
-    };
-    frag.appendChild(div);
-  });
-  
-  suggestionsBox.appendChild(frag);
-}
-
-// Close suggestions on click outside
-document.addEventListener("click", (e) => {
-  if (!searchInput.contains(e.target) && !suggestionsBox.contains(e.target)) {
-    suggestionsBox.classList.add("hidden");
-  }
+window.addEventListener("scroll", () => {
+  if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 500) fetchVideos(false);
 });
 
-// --- INITIALIZATION (Fresh Random on Every Load!) ---
-function init() {
-  console.log('🚀 Initializing YouTube Clone...');
-  console.log('📺 Total videos available:', videoList.length);
-  
-  showSkeletons(); // Show loading state immediately
-  
-  // ⭐ KEY STEP: Initialize fresh shuffled pool (RANDOM every time you refresh!)
-  initializePool();
-  
-  // Simulate network delay
-  setTimeout(() => {
-    // Get first batch of unique videos
-    const firstBatch = getNextBatch(BATCH_SIZE);
-    currentFeed = firstBatch;
-    
-    // Render first batch
-    renderVideos(firstBatch);
-    
-    // Start infinite scroll observer if there are more videos
-    if (hasMoreVideos()) {
-      observer.observe(sentinel);
-      showEndMessage(false);
-    } else {
-      showEndMessage(true);
-    }
-    
-    console.log(`✅ Ready! Showing ${firstBatch.length} videos`);
-    console.log(`📊 Remaining to load: ${getRemainingCount()}`);
-    console.log('💡 Refresh page (F5) for NEW random order!');
-  }, 500);
-}
-
-// Start App
-init();
+initAuth();
+fetchVideos();
 </script>
-
 </body>
 </html>

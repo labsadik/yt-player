@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>YouTube Clone - Watch</title>
+<title>Pro Stream Player</title>
 
 <!-- Tailwind CSS -->
 <script src="https://cdn.tailwindcss.com"></script>
@@ -22,753 +22,847 @@
   }
 </script>
 
-<!-- Plyr CSS -->
-<link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
+<!-- Video.js CSS (Used for structure, but customized heavily) -->
+<link href="https://vjs.zencdn.net/8.6.1/video-js.css" rel="stylesheet" />
 <!-- Font Awesome -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background-color: #0f0f0f; color: white; font-family: 'Inter', sans-serif; }
   
-  body { 
-    background-color: #0f0f0f; 
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  }
+  /* Custom Scrollbar */
+  ::-webkit-scrollbar { width: 8px; }
+  ::-webkit-scrollbar-track { background: #0f0f0f; }
+  ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: #555; }
 
-  /* Player Container - Fixed 16:9 aspect ratio */
-  #player-wrapper {
+  /* --- PLAYER LAYOUT & Z-INDEX FIXES --- */
+  .player-container {
+    background-color: #000;
     position: relative;
-    width: 100%;
-    padding-top: 56.25%;
-    background: #000;
-    border-radius: 12px;
     overflow: hidden;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
   }
 
-  /* All layers fill container exactly */
-  #player-wrapper > div[id] {
+  /* The Video.js wrapper */
+  .video-js {
+    width: 100%;
+    height: 100%;
+    background-color: #000 !important;
+  }
+  
+  /* THE YOUTUBE IFRAME - INVISIBLE BUT INTERACTIVE */
+  .vjs-tech {
+    object-fit: contain;
+    width: 100%;
+    height: 100%;
     position: absolute;
     top: 0;
     left: 0;
+    opacity: 0; /* COMPLETELY HIDE YT UI */
+    z-index: 10;
+  }
+
+  /* Custom Control Bar Styling */
+  .custom-controls {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+    padding: 20px 15px 15px 15px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 50; /* Above Video */
+    pointer-events: none; 
+  }
+
+  /* Show controls on hover or pause */
+  .player-container:hover .custom-controls,
+  .player-container.paused .custom-controls,
+  .custom-controls:hover {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* FIX: Prevent scrubber from showing on general player hover */
+  .player-container:hover .scrubber-handle {
+    opacity: 0 !important;
+  }
+
+  /* Only show scrubber when specifically hovering progress bar */
+  .progress-container:hover .scrubber-handle {
+    opacity: 1 !important;
+  }
+
+  /* Progress Bar Container */
+  .progress-container {
     width: 100%;
-    height: 100%;
+    height: 4px;
+    background: rgba(255,255,255,0.2);
+    cursor: pointer;
+    position: relative;
+    border-radius: 2px;
+    transition: height 0.1s;
+  }
+  .progress-container:hover { height: 6px; }
+
+  .progress-buffered {
+    position: absolute;
+    top: 0; left: 0; bottom: 0;
+    background: rgba(255,255,255,0.3);
+    width: 0%;
+    border-radius: 2px;
+    pointer-events: none;
+  }
+  .progress-played {
+    position: absolute;
+    top: 0; left: 0; bottom: 0;
+    background: #ff0000;
+    width: 0%;
+    border-radius: 2px;
+    pointer-events: none;
   }
 
-  /* Z-Index Layers:
-     10: Skeleton (shimmer only)
-     20: Thumbnail (with single loader/play button)
-     30: Player (video)
-  */
-
-  @keyframes shimmer {
-    0% { background-position: -1000px 0; }
-    100% { background-position: 1000px 0; }
+  .scrubber-handle {
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 12px;
+    height: 12px;
+    background: #ff0000;
+    border-radius: 50%;
+    left: 0%;
+    opacity: 0;
+    transition: opacity 0.15s ease-out;
+    pointer-events: none;
+    box-shadow: 0 0 6px rgba(255, 0, 0, 0.6);
+    z-index: 55;
   }
 
-  .skeleton {
-    background: linear-gradient(90deg, #1a1a1a 25%, #2d2d2d 50%, #1a1a1a 75%);
-    background-size: 1000px 100%;
-    animation: shimmer 2s infinite linear;
+  /* Timeline Preview Tooltip */
+  .timeline-preview {
+    position: absolute;
+    bottom: 25px;
+    transform: translateX(-50%);
+    background: #000;
+    border: 1px solid #333;
+    border-radius: 4px;
+    overflow: hidden;
+    display: none;
+    pointer-events: none;
+    z-index: 60;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.8);
+  }
+  .timeline-preview img {
+    width: 160px;
+    height: 90px;
+    object-fit: cover;
+    display: block;
+  }
+  .timeline-time {
+    text-align: center;
+    font-size: 11px;
+    padding: 4px;
+    background: #111;
+    color: white;
+    font-weight: bold;
   }
 
-  /* Layer 20: Thumbnail with Hover Play Button Feature */
-  #thumb-preview {
-    z-index: 20;
+  /* Start Overlay (Thumbnail + Loader/Play Btn) */
+  .start-overlay {
+    position: absolute;
+    inset: 0;
     background-size: cover;
     background-position: center;
-    background-repeat: no-repeat;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    position: relative;
+    z-index: 40; /* Above Invisible Video */
+    transition: opacity 0.3s;
+    background-color: #000;
   }
-
-  /* ⭐ SINGLE LOADER: Spinner that transforms to Play Button on Hover */
-  .thumb-loader {
-    width: 56px;
-    height: 56px;
-    border: 4px solid rgba(255,255,255,0.2);
-    border-top-color: #ff0000;
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-    background: rgba(0,0,0,0.5);
-    backdrop-filter: blur(4px);
-    transition: all 0.3s ease;
+  .start-overlay::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.3);
+    transition: background 0.3s;
+  }
+  .start-overlay:hover::before { background: rgba(0,0,0,0.1); }
+  
+  /* The Central Button Container */
+  .center-btn-container {
+    position: relative;
+    width: 68px;
+    height: 48px;
+    z-index: 41;
     display: flex;
     align-items: center;
     justify-content: center;
   }
 
-  /* HOVER STATE: Transform into Red Play Button */
-  #thumb-preview:hover .thumb-loader {
-    background: rgba(255, 0, 0, 0.95);
-    border: none;
-    animation: none;
-    box-shadow: 0 8px 24px rgba(255, 0, 0, 0.5);
-    transform: scale(1.1);
+  /* LOADER SPINNER */
+  .loader-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(255,255,255,0.1);
+    border-left-color: #ff0000;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    position: absolute;
   }
 
-  /* Spinner Icon (visible by default) */
-  .spinner-icon {
-    color: white;
-    font-size: 24px;
-    display: block;
+  /* BIG PLAY BUTTON */
+  .big-play-btn {
+    width: 68px;
+    height: 48px;
+    background: rgba(255, 0, 0, 0.9);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s, background 0.2s;
+    box-shadow: 0 0 20px rgba(255, 0, 0, 0.3);
+    opacity: 0; /* Hidden by default */
+    transform: scale(0.8);
+    transition: all 0.3s ease;
   }
-
-  /* Play Icon (hidden by default) */
-  .play-icon {
-    color: white;
-    font-size: 24px;
-    margin-left: 4px;
-    display: none;
-  }
-
-  /* On hover: Hide spinner, show play icon */
-  #thumb-preview:hover .spinner-icon {
-    display: none;
-  }
-
-  #thumb-preview:hover .play-icon {
-    display: block;
-  }
-
-  /* Seeking mode: Disable hover effect (show loader only) */
-  #thumb-preview.seeking-mode:hover .thumb-loader {
-    background: rgba(0,0,0,0.5);
-    border: 4px solid rgba(255,255,255,0.2);
-    border-top-color: #ff0000;
-    animation: spin 0.8s linear infinite;
-    box-shadow: none;
+  
+  /* State: When Ready to Play */
+  .start-overlay.ready .loader-spinner { display: none; }
+  .start-overlay.ready .big-play-btn { 
+    opacity: 1; 
     transform: scale(1);
   }
-
-  #thumb-preview.seeking-mode:hover .spinner-icon {
-    display: block;
+  .start-overlay.ready:hover .big-play-btn { 
+    transform: scale(1.1); 
+    background: #ff0000;
   }
 
-  #thumb-preview.seeking-mode:hover .play-icon {
-    display: none;
-  }
-
-  @keyframes spin {
-    to { transform: rotate(360deg); }
-  }
-
-  /* Layer 30: Player */
-  #player-container {
-    z-index: 30;
-    background: #000;
-  }
-
-  /* ============================================
-   * PLYR CUSTOMIZATION
-   * 1. Hide default overlays (circular "C" loader)
-   * 2. Auto-hide controls when playing
-   * 3. Show controls on hover
-   * ============================================ */
-  .plyr {
-    width: 100% !important;
-    height: 100% !important;
-    border-radius: 0 !important;
-  }
-  .plyr__video-wrapper,
-  .plyr__video-embed {
-    width: 100% !important;
-    height: 100% !important;
-  }
-
-  /* ⭐ HIDE PLYR'S DEFAULT OVERLAYS (Fixes circular "C" loader!) */
-  .plyr__control--overlaid {
-    display: none !important; /* Hide big play button overlay */
-  }
-
-  .plyr__spinner {
-    display: none !important; /* Hide Plyr's default circular spinner */
-  }
-
-  /* ⭐ AUTO-HIDE CONTROLS WHEN PLAYING */
-  .plyr__controls {
-    opacity: 0;
-    transition: opacity 0.3s ease;
-  }
-
-  /* Show controls on hover or when paused */
-  .plyr:hover .plyr__controls,
-  .plyr.plyr--paused .plyr__controls,
-  .plyr.plyr--stopped .plyr__controls,
-  .plyr:focus-within .plyr__controls {
-    opacity: 1;
-  }
-
-  /* Smooth transition for control bar */
-  .plyr__controls button,
-  .plyr__progress,
-  .plyr__time,
-  .plyr__volume {
-    transition: all 0.2s ease;
-  }
-
-  /* Playlist scrollbar */
-  .playlist-scroll::-webkit-scrollbar { width: 6px; }
-  .playlist-scroll::-webkit-scrollbar-track { background: transparent; }
-  .playlist-scroll::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
-
-  .fade-in { animation: fadeIn 0.4s ease-out; }
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(8px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  .hover-lift { transition: all 0.2s ease; }
-  .hover-lift:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
-
-  .btn-press:active { transform: scale(0.96); }
+  @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
   .line-clamp-2 {
     display: -webkit-box;
-    --webkit-line-clamp: 2;
+    -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
-
-  @media (max-width: 1023px) {
-    .hide-scrollbar-mobile::-webkit-scrollbar { display: none; }
-    .hide-scrollbar-mobile { -ms-overflow-style: none; scrollbar-width: none; }
-    
-    /* Always show controls on mobile (touch devices) */
-    .plyr__controls {
-      opacity: 1 !important;
-    }
-  }
 </style>
 </head>
-<body class="text-white antialiased min-h-screen">
+<body class="antialiased min-h-screen flex flex-col">
 
-<div class="flex flex-col lg:flex-row gap-4 lg:gap-6 p-3 sm:p-4 lg:p-6 max-w-[1800px] mx-auto items-start">
-  
-  <main class="w-full lg:w-[70%] xl:w-[65%] flex-shrink-0">
+<!-- HEADER -->
+<div class="sticky top-0 z-50 bg-[#0f0f0f]/95 backdrop-blur border-b border-gray-800 px-4 py-3 flex items-center justify-between gap-4">
+  <div class="flex items-center gap-2 cursor-pointer" onclick="window.location.href='index.html'">
+    <div class="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center text-white font-bold">▶</div>
+    <h1 class="text-xl font-bold tracking-tight">Stream<span class="text-red-500">Pro</span></h1>
+  </div>
+
+  <div class="flex-1 max-w-xl relative hidden sm:block">
+    <input id="search" type="text" placeholder="Search videos..." 
+      class="w-full bg-[#1a1a1a] border border-gray-700 text-sm rounded-full px-4 py-2 focus:outline-none focus:border-red-500 transition-colors pl-10 text-white">
+    <svg class="w-4 h-4 text-gray-500 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+  </div>
+
+  <button onclick="playNext()" class="bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-full text-sm font-medium transition-colors flex items-center gap-2">
+    Next <i class="fa-solid fa-forward text-xs"></i>
+  </button>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="flex-1 max-w-[1600px] mx-auto p-4 lg:p-6 grid grid-cols-1 lg:grid-cols-3 gap-6 w-full">
+
+  <!-- PLAYER SECTION (Left) -->
+  <div class="lg:col-span-2 space-y-4">
     
-    <!-- PLAYER WRAPPER -->
-    <div id="player-wrapper">
+    <!-- CUSTOM PLAYER CONTAINER -->
+    <div id="player-wrapper" class="player-container paused relative w-full aspect-video bg-black rounded-xl overflow-hidden shadow-2xl group select-none ring-1 ring-gray-800">
       
-      <!-- Layer 10: Skeleton (shimmer ONLY - no spinner!) -->
-      <div id="player-skeleton" class="skeleton"></div>
-
-      <!-- Layer 20: Thumbnail + SINGLE Loader/Hover Play Button -->
-      <div id="thumb-preview" style="display: none;">
-        <div class="thumb-loader">
-          <i class="fa-solid fa-circle-notch spinner-icon fa-spin"></i>
-          <i class="fa-solid fa-play play-icon"></i>
+      <!-- Start Overlay (Thumbnail + Logic based Button) -->
+      <div id="start-overlay" class="start-overlay" style="background-image: url('');">
+        <div class="center-btn-container">
+          <!-- State 1: Loader -->
+          <div class="loader-spinner"></div>
+          <!-- State 2: Play Button (Hidden initially) -->
+          <div class="big-play-btn">
+            <i class="fa-solid fa-play text-white text-xl ml-1"></i>
+          </div>
         </div>
       </div>
 
-      <!-- Layer 30: Player (when PLAYING) -->
-      <div id="player-container" style="display: none;"></div>
-      
-    </div>
+      <!-- Video Element (Invisible YouTube Iframe lives here) -->
+      <video id="my-video" class="video-js vjs-default-skin w-full h-full" preload="none">
+        <p class="vjs-no-js">To view this video please enable JavaScript.</p>
+      </video>
 
-    <!-- Title Section -->
-    <div id="title-section" class="mt-3 sm:mt-4">
-      <div id="title-skeleton" class="h-6 sm:h-7 w-3/4 rounded skeleton mb-3"></div>
-      <h1 id="video-title" class="hidden text-lg sm:text-xl lg:text-2xl font-semibold leading-relaxed fade-in"></h1>
-    </div>
-    
-    <!-- Actions Bar -->
-    <div class="flex flex-wrap gap-2 sm:gap-3 mt-3 sm:mt-4 pb-4 border-b border-neutral-800">
-      
-      <button id="like-btn" onclick="handleLike()" class="flex items-center gap-2 bg-yt-dark hover:bg-neutral-700 px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-medium transition btn-press hover-lift">
-        <i class="fa-solid fa-thumbs-up"></i> 
-        <span id="like-count">0</span>
-      </button>
-      
-      <button onclick="handleShare()" class="flex items-center gap-2 bg-yt-dark hover:bg-neutral-700 px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-medium transition btn-press hover-lift">
-        <i class="fa-solid fa-share"></i> 
-        <span class="hidden sm:inline">Share</span>
-      </button>
-      
-      <button id="fav-btn" onclick="toggleFavorite()" class="flex items-center gap-2 bg-yt-dark hover:bg-neutral-700 px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-medium transition btn-press hover-lift">
-        <i class="fa-regular fa-star"></i> 
-        <span class="hidden sm:inline">Save</span>
-      </button>
+      <!-- Custom Controls -->
+      <div class="custom-controls">
+        
+        <!-- Progress Bar Area -->
+        <div class="relative w-full group/progress">
+          <!-- Timeline Preview Popup -->
+          <div id="timeline-preview" class="timeline-preview">
+            <img id="preview-img" src="" alt="Preview">
+            <div id="preview-time" class="timeline-time">00:00</div>
+          </div>
 
-      <button onclick="playNext()" class="flex items-center gap-2 bg-yt-dark hover:bg-neutral-700 px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-medium transition btn-press hover-lift ml-auto">
-        <span class="hidden sm:inline">Next</span>
-        <i class="fa-solid fa-forward"></i>
-      </button>
-    </div>
-  </main>
-
-  <!-- RIGHT: Playlist -->
-  <aside id="playlist-container" class="w-full lg:w-[30%] xl:w-[35%] min-w-0 lg:min-w-[320px]">
-    
-    <div class="flex items-center justify-between mb-3 px-1">
-      <h2 class="text-base sm:text-lg font-semibold flex items-center gap-2">
-        <i class="fa-solid fa-list text-yt-red"></i>
-        Up Next
-      </h2>
-      <span id="video-count" class="text-xs text-yt-gray">0 videos</span>
-    </div>
-
-    <div id="playlist" class="max-h-[50vh] lg:max-h-[70vh] overflow-y-auto playlist-scroll hide-scrollbar-mobile space-y-2 pr-1">
-      
-      <div id="playlist-skeleton" class="space-y-2">
-        <div class="flex gap-3 p-2 animate-pulse">
-          <div class="w-32 sm:w-40 h-20 sm:h-24 rounded-lg skeleton flex-shrink-0"></div>
-          <div class="flex-1 space-y-2 pt-1">
-            <div class="h-4 w-full rounded skeleton"></div>
-            <div class="h-3 w-2/3 rounded skeleton"></div>
+          <div class="progress-container" id="progress-bar">
+            <div class="progress-buffered" id="buffered-bar"></div>
+            <div class="progress-played" id="played-bar"></div>
+            <div class="scrubber-handle" id="scrubber"></div>
           </div>
         </div>
-        <div class="flex gap-3 p-2 animate-pulse">
-          <div class="w-32 sm:w-40 h-20 sm:h-24 rounded-lg skeleton flex-shrink-0"></div>
-          <div class="flex-1 space-y-2 pt-1">
-            <div class="h-4 w-full rounded skeleton"></div>
-            <div class="h-3 w-2/3 rounded skeleton"></div>
+
+        <!-- Buttons Row -->
+        <div class="flex items-center justify-between mt-1">
+          <div class="flex items-center gap-4">
+            <!-- Play/Pause -->
+            <button id="btn-play" class="hover:text-red-500 transition-colors text-white">
+              <i id="icon-play" class="fa-solid fa-play text-xl"></i>
+              <i id="icon-pause" class="fa-solid fa-pause text-xl hidden"></i>
+            </button>
+
+            <!-- Volume -->
+            <div class="flex items-center gap-2 group/vol">
+              <button id="btn-mute" class="hover:text-white text-gray-300">
+                <i class="fa-solid fa-volume-high text-lg"></i>
+              </button>
+              <input type="range" id="vol-slider" min="0" max="1" step="0.1" value="1" class="w-0 overflow-hidden group-hover/vol:w-20 transition-all duration-300 h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-red-500">
+            </div>
+
+            <!-- Time Display -->
+            <div class="text-xs font-medium text-gray-300 font-mono">
+              <span id="current-time">0:00</span> / <span id="duration">0:00</span>
+            </div>
           </div>
-        </div>
-        <div class="flex gap-3 p-2 animate-pulse">
-          <div class="w-32 sm:w-40 h-20 sm:h-24 rounded-lg skeleton flex-shrink-0"></div>
-          <div class="flex-1 space-y-2 pt-1">
-            <div class="h-4 w-full rounded skeleton"></div>
-            <div class="h-3 w-2/3 rounded skeleton"></div>
+
+          <div class="flex items-center gap-3">
+             <!-- Fullscreen -->
+             <button id="btn-fullscreen" class="hover:text-white text-gray-300">
+               <i class="fa-solid fa-expand text-lg"></i>
+             </button>
           </div>
         </div>
       </div>
-      
     </div>
-  </aside>
+
+    <!-- Video Info & Share -->
+    <div>
+      <h2 id="video-title" class="text-xl lg:text-2xl font-bold leading-tight mb-2 text-white">Loading...</h2>
+      <div class="flex items-center justify-between text-sm text-gray-400 border-b border-gray-800 pb-4">
+        <div class="flex items-center gap-2">
+           <span class="bg-gray-800 px-2 py-1 rounded text-xs text-gray-300">YouTube Source</span>
+        </div>
+        <!-- SHARE BUTTON -->
+        <button onclick="openShareModal()" class="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-full transition-colors">
+          <i class="fa-solid fa-share"></i> Share
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- PLAYLIST (Right) -->
+  <div class="lg:col-span-1">
+    <div class="bg-[#121212] rounded-xl border border-gray-800 h-[calc(100vh-120px)] flex flex-col sticky top-24">
+      <div class="p-4 border-b border-gray-800 flex justify-between items-center">
+        <h3 class="font-bold text-lg text-white">Up Next</h3>
+        <span id="video-count" class="text-xs text-gray-500">0 videos</span>
+      </div>
+      <div id="playlist" class="flex-1 overflow-y-auto p-2 space-y-2">
+        <!-- Items injected via JS -->
+      </div>
+    </div>
+  </div>
 
 </div>
 
-<!-- Toast Notification -->
-<div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-neutral-800 text-white px-6 py-3 rounded-full shadow-2xl z-50 opacity-0 pointer-events-none transition-all duration-300 transform translate-y-4">
-  <span id="toast-message"></span>
+<!-- SHARE MODAL POPUP -->
+<div id="share-modal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300">
+  <div class="bg-[#1e1e1e] p-6 rounded-2xl shadow-2xl w-full max-w-md transform scale-95 transition-transform duration-300 border border-gray-700" id="share-modal-content">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="text-lg font-bold text-white">Share Video</h3>
+      <button onclick="closeShareModal()" class="text-gray-400 hover:text-white">
+        <i class="fa-solid fa-xmark text-xl"></i>
+      </button>
+    </div>
+    
+    <div class="mb-4">
+      <label class="block text-xs text-gray-400 mb-1">Video Link</label>
+      <div class="flex gap-2">
+        <input type="text" id="share-url" readonly class="w-full bg-black border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-300 focus:outline-none focus:border-red-500">
+        <button onclick="copyShareLink()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+          Copy
+        </button>
+      </div>
+    </div>
+    
+    <div class="flex justify-end">
+       <button onclick="closeShareModal()" class="text-sm text-gray-400 hover:text-white">Close</button>
+    </div>
+  </div>
 </div>
 
-<!-- Scripts -->
-<script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
-<script src="list.js"></script>
+<!-- SCRIPTS -->
+<!-- Video.js Core -->
+<script src="https://vjs.zencdn.net/8.6.1/video.min.js"></script>
 
 <script>
-/**
- * ============================================
- * YOUTUBE CLONE - CLEAN PLAYER EXPERIENCE
- * 
- * FIXES:
- * ✅ Hidden Plyr's circular "C" loading overlay
- * ✅ Single custom loader system
- * ✅ Auto-hide controls when playing
- * ✅ Show controls on hover/pause
- * ✅ Mobile: always show controls (touch-friendly)
- * 
- * LAYERS:
- * 10: Skeleton (shimmer only)
- * 20: Thumbnail + Custom Loader/Play Button
- * 30: Player (video with smart controls)
- * ============================================
- */
+// --- CONFIGURATION ---
+const API_URL = "http://localhost:5000/api/videos"; 
 
 // --- STATE ---
-const state = {
-  player: null,
+let state = {
+  videos: [],
+  filtered: [],
   currentIndex: 0,
-  videoList: [],
-  likes: {},
-  favorites: {},
-  isLoading: true,
-  currentThumbnail: '',
-  isSeeking: false
+  isPlaying: false,
+  ytPlayer: null,
+  updateInterval: null,
+  duration: 0,
+  currentVideoId: '',
+  isPlayerReady: false
 };
 
-// --- DOM ---
-const dom = {
-  playerWrapper: document.getElementById('player-wrapper'),
-  playerContainer: document.getElementById('player-container'),
-  playerSkeleton: document.getElementById('player-skeleton'),
-  thumbPreview: document.getElementById('thumb-preview'),
-  videoTitle: document.getElementById('video-title'),
-  titleSkeleton: document.getElementById('title-skeleton'),
-  likeCount: document.getElementById('like-count'),
-  likeBtn: document.getElementById('like-btn'),
-  favBtn: document.getElementById('fav-btn'),
+// --- DOM ELEMENTS ---
+const els = {
+  title: document.getElementById('video-title'),
   playlist: document.getElementById('playlist'),
-  playlistSkeleton: document.getElementById('playlist-skeleton'),
+  startOverlay: document.getElementById('start-overlay'),
+  videoTag: document.getElementById('my-video'),
+  wrapper: document.getElementById('player-wrapper'),
   videoCount: document.getElementById('video-count'),
-  toast: document.getElementById('toast'),
-  toastMessage: document.getElementById('toast-message')
+  
+  // Controls
+  btnPlay: document.getElementById('btn-play'),
+  iconPlay: document.getElementById('icon-play'),
+  iconPause: document.getElementById('icon-pause'),
+  progressBar: document.getElementById('progress-bar'),
+  playedBar: document.getElementById('played-bar'),
+  bufferedBar: document.getElementById('buffered-bar'),
+  scrubber: document.getElementById('scrubber'),
+  currTime: document.getElementById('current-time'),
+  durTime: document.getElementById('duration'),
+  volSlider: document.getElementById('vol-slider'),
+  btnFull: document.getElementById('btn-fullscreen'),
+  
+  // Preview
+  previewBox: document.getElementById('timeline-preview'),
+  previewImg: document.getElementById('preview-img'),
+  previewTime: document.getElementById('preview-time'),
+
+  // Share Modal
+  shareModal: document.getElementById('share-modal'),
+  shareModalContent: document.getElementById('share-modal-content'),
+  shareUrlInput: document.getElementById('share-url')
 };
 
-// --- UTILITIES ---
-function sanitizeHTML(str) {
-  const d = document.createElement('d');
-  d.textContent = str;
-  return d.innerHTML;
-}
-
-function debounce(fn, wait) {
-  let t;
-  return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), wait); };
-}
-
-let toastTimer;
-function showToast(msg, dur = 2500) {
-  dom.toastMessage.textContent = msg;
-  dom.toast.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-4');
-  dom.toast.classList.add('opacity-100', 'translate-y-0');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => {
-    dom.toast.classList.add('opacity-0', 'pointer-events-none', 'translate-y-4');
-    dom.toast.classList.remove('opacity-100', 'translate-y-0');
-  }, dur);
-}
-
-// === LAYER SWITCHER ===
-function showLayer(layer) {
-  dom.playerSkeleton.style.display = 'none';
-  dom.thumbPreview.style.display = 'none';
-  dom.playerContainer.style.display = 'none';
-  
-  switch(layer) {
-    case 'skeleton':
-      dom.playerSkeleton.style.display = 'block';
-      break;
-    case 'thumb':
-      dom.thumbPreview.style.display = 'flex';
-      break;
-    case 'player':
-      dom.playerContainer.style.display = 'block';
-      break;
+// --- INITIALIZATION ---
+async function init() {
+  try {
+    const res = await fetch(API_URL);
+    
+    if (!res.ok) {
+      throw new Error(`API responded with status: ${res.status}`);
+    }
+    
+    const data = await res.json();
+    
+    if (!Array.isArray(data.videos) || data.videos.length === 0) {
+      throw new Error('No videos found in API response');
+    }
+    
+    state.videos = data.videos;
+    state.filtered = [...state.videos];
+    
+    renderPlaylist();
+    
+    // CHECK URL FOR ID REDIRECTION
+    const params = new URLSearchParams(window.location.search);
+    const videoId = params.get('id');
+    
+    let startIndex = 0;
+    if (videoId) {
+      const foundIndex = state.filtered.findIndex(v => v.id === videoId);
+      if (foundIndex !== -1) {
+        startIndex = foundIndex;
+      }
+    }
+    
+    loadVideoState(startIndex);
+    
+  } catch (err) {
+    console.error("Failed to load videos from API:", err);
+    showErrorState(err.message);
   }
 }
 
-function setTitleSkeleton(show) {
-  dom.titleSkeleton.classList.toggle('hidden', !show);
-  dom.videoTitle.classList.toggle('hidden', show);
+function showErrorState(message) {
+  els.title.textContent = 'Error Loading Videos';
+  els.playlist.innerHTML = `
+    <div class="flex flex-col items-center justify-center h-full text-gray-400 p-8">
+      <i class="fa-solid fa-exclamation-triangle text-4xl mb-4 text-red-500"></i>
+      <p class="text-center font-medium">Unable to load videos</p>
+      <p class="text-sm mt-2 text-gray-500">${message}</p>
+      <button onclick="location.reload()" class="mt-4 bg-red-600 hover:bg-red-700 px-6 py-2 rounded-lg transition-colors">
+        Retry
+      </button>
+    </div>
+  `;
+  els.videoCount.textContent = '0 videos';
 }
 
-function setPlaylistSkeleton(show) {
-  dom.playlistSkeleton.style.display = show ? 'block' : 'none';
+// --- CORE LOGIC ---
+
+function loadVideoState(index) {
+  state.currentIndex = index;
+  const video = state.filtered[index];
+  if(!video) return;
+
+  state.currentVideoId = video.id;
+  state.isPlayerReady = false;
+
+  // Update URL without reloading
+  const newUrl = `${window.location.pathname}?id=${video.id}`;
+  window.history.pushState({ path: newUrl }, '', newUrl);
+
+  // Update UI Text
+  els.title.textContent = video.title;
+  document.title = `${video.title} | StreamPro`;
+  
+  // Reset Player State
+  stopUpdateLoop();
+  state.isPlaying = false;
+  updatePlayIcon();
+  
+  // RESET OVERLAY TO LOADING STATE
+  els.startOverlay.classList.remove('ready'); // Shows Spinner, Hides Play Btn
+  els.startOverlay.style.display = 'flex';
+  els.startOverlay.style.backgroundImage = `url('${video.thumbnail}')`;
+  
+  // Highlight Playlist
+  highlightPlaylistItem(index);
+  
+  // Prepare YouTube Player
+  setupYouTubePlayer(video.id);
 }
 
-// === PLAYER SETUP ===
-function initPlayer(videoId) {
-  return new Promise((resolve, reject) => {
-    if (state.player) {
-      try { state.player.off(); state.player.destroy(); } catch(e){}
-      state.player = null;
+function setupYouTubePlayer(videoId) {
+  if (!window.YT || !window.YT.Player) {
+    loadYouTubeAPI(() => setupYouTubePlayer(videoId));
+    return;
+  }
+
+  if (state.ytPlayer) {
+    state.ytPlayer.destroy();
+  }
+
+  let ytDiv = document.getElementById('yt-api-div');
+  if(!ytDiv) {
+    ytDiv = document.createElement('div');
+    ytDiv.id = 'yt-api-div';
+    ytDiv.className = 'absolute inset-0 z-10 w-full h-full'; 
+    els.wrapper.appendChild(ytDiv);
+  }
+
+  state.ytPlayer = new YT.Player('yt-api-div', {
+    height: '100%',
+    width: '100%',
+    videoId: videoId,
+    playerVars: {
+      'autoplay': 0,
+      'controls': 0, // Hide native controls
+      'rel': 0,
+      'modestbranding': 1,
+      'fs': 0,
+      'iv_load_policy': 3,
+      'origin': window.location.origin
+    },
+    events: {
+      'onReady': onPlayerReady,
+      'onStateChange': onPlayerStateChange
     }
-
-    dom.playerContainer.innerHTML = `
-      <div id="plyr" data-plyr-provider="youtube" data-plyr-embed-id="${sanitizeHTML(videoId)}"></div>
-    `;
-
-    state.player = new Plyr('#plyr', {
-      autoplay: true,
-      muted: false,
-      controls: ['restart','play','progress','current-time','mute','volume','captions','settings','pip','airplay','fullscreen'],
-      settings: ['captions','quality','speed','loop'],
-      keyboard: { focused: true, global: true },
-      tooltips: { controls: true, seek: true },
-      storage: { enabled: true, key: 'plyr' },
-      speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2] },
-      quality: { default: 720, options: [4320,2880,2160,1440,1080,720,480,360,240] },
-      loop: { active: false },
-      clickToPlay: true,
-      hideControls: true, // Let our CSS handle control visibility
-      resetOnEnd: false,
-      invertTime: true,
-      seekTime: 10,
-      volume: 1
-    });
-
-    // Event Listeners
-    state.player.on('ready', () => resolve());
-    state.player.on('error', () => reject('Player error'));
-    
-    // PLAYING → Show player
-    state.player.on('playing', () => {
-      showLayer('player');
-      state.isSeeking = false;
-    });
-    
-    // PAUSED → Show thumbnail with single loader
-    state.player.on('pause', () => {
-      if (!state.isSeeking) {
-        showThumbWithLoader();
-      }
-    });
-    
-    // SEEKING (dragging) → Show thumbnail + loader
-    state.player.on('seeking', () => {
-      state.isSeeking = true;
-      showThumbWithLoader(true);
-    });
-    
-    // SEEKED (released) → Auto-play!
-    state.player.on('seeked', () => {
-      state.isSeeking = false;
-      setTimeout(() => {
-        if (state.player) {
-          state.player.play().catch(e => console.log('Autoplay after seek:', e));
-        }
-      }, 100);
-    });
-    
-    // Video ended → auto next
-    state.player.on('ended', () => {
-      playNext();
-    });
   });
 }
 
-// === SHOW THUMBNAIL WITH SINGLE LOADER ===
-function showThumbWithLoader(seekingMode = false) {
-  if (state.currentThumbnail) {
-    dom.thumbPreview.style.backgroundImage = `url('${state.currentThumbnail}')`;
-  }
+function onPlayerReady(event) {
+  state.duration = event.target.getDuration();
+  els.durTime.textContent = formatTime(state.duration);
   
-  if (seekingMode) {
-    dom.thumbPreview.classList.add('seeking-mode');
-  } else {
-    dom.thumbPreview.classList.remove('seeking-mode');
-  }
-  
-  showLayer('thumb');
+  // SWITCH OVERLAY TO "PLAY BUTTON" STATE
+  state.isPlayerReady = true;
+  els.startOverlay.classList.add('ready');
 }
 
-// CLICK HANDLER FOR THUMBNAIL (Resume on click)
-dom.thumbPreview.addEventListener('click', () => {
-  if (!state.isSeeking && state.player) {
-    state.player.play().catch(e => console.log('Play error:', e));
+function onPlayerStateChange(event) {
+  if (event.data == YT.PlayerState.PLAYING) {
+    state.isPlaying = true;
+    
+    // HIDE OVERLAY COMPLETELY WHEN PLAYING
+    els.startOverlay.style.display = 'none';
+    
+    els.wrapper.classList.remove('paused');
+    startUpdateLoop();
+  } else {
+    state.isPlaying = false;
+    els.wrapper.classList.add('paused');
+    stopUpdateLoop();
+    
+    // If paused manually, we might want to show overlay again? 
+    // Usually modern players keep overlay hidden on pause unless you click out.
+    // But for this request, let's keep it clean.
+  }
+  updatePlayIcon();
+}
+
+// --- USER INTERACTION ---
+
+// 1. Click Thumbnail Overlay -> Play
+els.startOverlay.addEventListener('click', () => {
+  if(state.isPlayerReady && state.ytPlayer && typeof state.ytPlayer.playVideo === 'function') {
+    state.ytPlayer.playVideo();
   }
 });
 
-// === LOAD VIDEO ===
-async function loadVideo(idx) {
-  if (!state.videoList.length || idx < 0 || idx >= state.videoList.length) return;
-  
-  state.isLoading = true;
-  state.currentIndex = idx;
-  state.isSeeking = false;
-  const vid = state.videoList[idx];
-  
-  state.currentThumbnail = vid.thumbnail;
-  
-  showLayer('skeleton'); // Show shimmer (NO spinner!)
-  setTitleSkeleton(true);
-  
-  dom.videoTitle.textContent = vid.title;
-  document.title = `${vid.title} - YouTube Clone`;
-  window.history.replaceState({}, '', `?id=${encodeURIComponent(vid.id)}`);
-  dom.likeCount.textContent = state.likes[vid.id] || 0;
-  
-  updateUI();
-  
-  try {
-    await initPlayer(vid.id);
-    
-    // NOW show thumbnail with THE SINGLE LOADER
-    showThumbWithLoader();
-    setTitleSkeleton(false);
-    state.isLoading = false;
-    
-    // Auto-start
-    setTimeout(() => {
-      if (state.player) {
-        state.player.play().catch(e => console.log('Autoplay:', e));
-      }
-    }, 300);
-    
-  } catch(err) {
-    console.error('Load error:', err);
-    showToast('❌ Failed to load');
-    showLayer('skeleton');
-  }
-}
+// 2. Custom Play/Pause Button
+els.btnPlay.addEventListener('click', togglePlay);
 
-// === UPDATE UI ===
-function updateUI() {
-  updateFavBtn();
-  renderPlaylist();
-  highlightCurrent();
-}
-
-// === PLAYLIST ===
-function renderPlaylist() {
-  const frag = document.createDocumentFragment();
-  dom.playlist.querySelectorAll('.playlist-item').forEach(el => el.remove());
+function togglePlay() {
+  if(!state.ytPlayer) return;
   
-  state.videoList.forEach((v, i) => {
-    frag.appendChild(createItem(v, i));
-  });
-  
-  setPlaylistSkeleton(false);
-  dom.playlist.appendChild(frag);
-  dom.videoCount.textContent = `${state.videoList.length} videos`;
-}
-
-function createItem(video, idx) {
-  const el = document.createElement('div');
-  const active = idx === state.currentIndex;
-  const fav = state.favorites[video.id];
-  
-  el.className = `playlist-item flex gap-2 sm:gap-3 p-2 rounded-xl cursor-pointer transition-all duration-200 hover:bg-yt-dark ${active ? 'bg-neutral-800 ring-1 ring-yt-red/50' : ''}`;
-  
-  el.innerHTML = `
-    <div class="relative w-28 sm:w-36 lg:w-40 h-16 sm:h-20 lg:h-24 flex-shrink-0 rounded-lg overflow-hidden bg-neutral-900 group">
-      <img src="${sanitizeHTML(video.thumbnail)}" alt="${sanitizeHTML(video.title)}" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" loading="lazy" decoding="async">
-      <div class="absolute bottom-1 right-1 bg-black/90 text-white text-xs px-1.5 py-0.5 rounded font-medium">${sanitizeHTML(video.duration)}</div>
-      ${active ? '<div class="absolute inset-0 bg-black/30 flex items-center justify-center"><i class="fa-solid fa-play text-white text-lg"></i></div>' : ''}
-    </div>
-    <div class="flex-1 flex flex-col justify-center overflow-hidden min-w-0">
-      <h3 class="text-xs sm:text-sm font-medium line-clamp-2 leading-tight ${active ? 'text-white' : 'text-gray-200'}">${sanitizeHTML(video.title)}</h3>
-      <div class="flex items-center gap-2 mt-1">
-        ${fav ? '<i class="fa-solid fa-star text-yellow-400 text-xs" title="Saved"></i>' : ''}
-        ${active ? '<span class="text-yt-red text-xs font-medium">Now Playing</span>' : ''}
-      </div>
-    </div>
-  `;
-  
-  el.onclick = debounce(() => {
-    loadVideo(idx);
-    if (window.innerWidth < 1024) dom.playerWrapper.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }, 150);
-  
-  return el;
-}
-
-function highlightCurrent() {
-  dom.playlist.querySelectorAll('.playlist-item').forEach((el, i) => {
-    const active = i === state.currentIndex;
-    el.classList.toggle('bg-neutral-800', active);
-    el.classList.toggle('ring-1', active);
-    el.classList.toggle('ring-yt-red/50', active);
-  });
-  
-  const activeEl = dom.playlist.querySelector(`.playlist-item:nth-child(${state.currentIndex + 1})`);
-  if (activeEl) requestAnimationFrame(() => activeEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' }));
-}
-
-// === ACTIONS ===
-
-function handleLike() {
-  const v = state.videoList[state.currentIndex];
-  if (!v) return;
-  state.likes[v.id] = (state.likes[v.id] || 0) + 1;
-  try { localStorage.setItem('yt_likes', JSON.stringify(state.likes)); } catch(e){}
-  dom.likeCount.textContent = state.likes[v.id];
-  dom.likeBtn.classList.add('scale-110', 'text-yt-red');
-  setTimeout(() => dom.likeBtn.classList.remove('scale-110', 'text-yt-red'), 200);
-  showToast('❤️ Liked!');
-}
-
-async function handleShare() {
-  const url = location.href;
-  if (navigator.share) {
-    try { await navigator.share({ title: state.videoList[state.currentIndex]?.title, url }); return; } catch(e){}
-  }
-  try { await navigator.clipboard.writeText(url); showToast('📋 Copied!'); } catch(e){ prompt('Copy:', url); }
-}
-
-function toggleFavorite() {
-  const v = state.videoList[state.currentIndex];
-  if (!v) return;
-  state.favorites[v.id] = !state.favorites[v.id];
-  try { localStorage.setItem('yt_favorites', JSON.stringify(state.favorites)); } catch(e){}
-  updateFavBtn();
-  renderPlaylist();
-  showToast(state.favorites[v.id] ? '⭐ Saved!' : 'Removed');
-}
-
-function updateFavBtn() {
-  const v = state.videoList[state.currentIndex];
-  if (!v) return;
-  const fav = state.favorites[v.id];
-  if (fav) {
-    dom.favBtn.innerHTML = '<i class="fa-solid fa-star text-yellow-400"></i><span class="hidden sm:inline">Saved</span>';
-    dom.favBtn.classList.add('bg-yellow-500/20', 'border', 'border-yellow-500/50');
+  if(state.isPlaying) {
+    state.ytPlayer.pauseVideo();
   } else {
-    dom.favBtn.innerHTML = '<i class="fa-regular fa-star"></i><span class="hidden sm:inline">Save</span>';
-    dom.favBtn.classList.remove('bg-yellow-500/20', 'border', 'border-yellow-500/50');
+    // If overlay is visible, trigger it
+    if(els.startOverlay.style.display !== 'none') {
+       els.startOverlay.click();
+    } else {
+       state.ytPlayer.playVideo();
+    }
   }
 }
+
+function updatePlayIcon() {
+  if(state.isPlaying) {
+    els.iconPlay.classList.add('hidden');
+    els.iconPause.classList.remove('hidden');
+  } else {
+    els.iconPlay.classList.remove('hidden');
+    els.iconPause.classList.add('hidden');
+  }
+}
+
+// 3. Progress Bar Logic
+function startUpdateLoop() {
+  state.updateInterval = setInterval(() => {
+    if(!state.ytPlayer || !state.isPlaying) return;
+    
+    const currentTime = state.ytPlayer.getCurrentTime();
+    const duration = state.ytPlayer.getDuration();
+    
+    if(duration > 0) {
+      const percent = (currentTime / duration) * 100;
+      els.playedBar.style.width = `${percent}%`;
+      els.scrubber.style.left = `${percent}%`;
+      els.currTime.textContent = formatTime(currentTime);
+    }
+  }, 500);
+}
+
+function stopUpdateLoop() {
+  clearInterval(state.updateInterval);
+}
+
+// 4. Scrubbing
+let isDragging = false;
+
+els.progressBar.addEventListener('mousedown', (e) => {
+  isDragging = true;
+  seek(e);
+});
+
+document.addEventListener('mousemove', (e) => {
+  if(isDragging) seek(e);
+  handlePreviewHover(e);
+});
+
+document.addEventListener('mouseup', () => {
+  if(isDragging) {
+    isDragging = false;
+    els.previewBox.style.display = 'none';
+  }
+});
+
+function seek(e) {
+  if(!state.ytPlayer || state.duration <= 0) return;
+  
+  const rect = els.progressBar.getBoundingClientRect();
+  let pos = (e.clientX - rect.left) / rect.width;
+  pos = Math.max(0, Math.min(1, pos));
+  
+  const seekTime = pos * state.duration;
+  
+  els.playedBar.style.width = `${pos * 100}%`;
+  els.scrubber.style.left = `${pos * 100}%`;
+  els.currTime.textContent = formatTime(seekTime);
+  
+  state.ytPlayer.seekTo(seekTime, true);
+}
+
+// 5. Timeline Preview
+function handlePreviewHover(e) {
+  if(!state.currentVideoId) return;
+  
+  const rect = els.progressBar.getBoundingClientRect();
+  if (e.clientY >= rect.top && e.clientY <= rect.bottom) {
+    let pos = (e.clientX - rect.left) / rect.width;
+    pos = Math.max(0, Math.min(1, pos));
+    
+    const time = pos * state.duration;
+    
+    els.previewBox.style.display = 'block';
+    els.previewBox.style.left = `${pos * 100}%`;
+    els.previewTime.textContent = formatTime(time);
+    els.previewImg.src = `https://img.youtube.com/vi/${state.currentVideoId}/mqdefault.jpg`; 
+  } else {
+    els.previewBox.style.display = 'none';
+  }
+}
+
+// 6. Volume
+els.volSlider.addEventListener('input', (e) => {
+  if(state.ytPlayer) state.ytPlayer.setVolume(e.target.value * 100);
+});
+
+// 7. Fullscreen
+els.btnFull.addEventListener('click', () => {
+  if (!document.fullscreenElement) {
+    els.wrapper.requestFullscreen().catch(err => {
+      console.error(err);
+    });
+  } else {
+    document.exitFullscreen();
+  }
+});
+
+// --- SHARE MODAL FUNCTIONS ---
+function openShareModal() {
+  const url = window.location.href;
+  els.shareUrlInput.value = url;
+  
+  els.shareModal.classList.remove('hidden');
+  setTimeout(() => {
+    els.shareModal.classList.remove('opacity-0');
+    els.shareModalContent.classList.remove('scale-95');
+    els.shareModalContent.classList.add('scale-100');
+  }, 10);
+}
+
+function closeShareModal() {
+  els.shareModal.classList.add('opacity-0');
+  els.shareModalContent.classList.remove('scale-100');
+  els.shareModalContent.classList.add('scale-95');
+  
+  setTimeout(() => {
+    els.shareModal.classList.add('hidden');
+  }, 300);
+}
+
+function copyShareLink() {
+  els.shareUrlInput.select();
+  els.shareUrlInput.setSelectionRange(0, 99999); // Mobile
+  navigator.clipboard.writeText(els.shareUrlInput.value).then(() => {
+    const btn = document.querySelector('#share-modal button.bg-red-600');
+    const originalText = btn.innerText;
+    btn.innerText = "Copied!";
+    btn.classList.add('bg-green-600', 'hover:bg-green-700');
+    btn.classList.remove('bg-red-600', 'hover:bg-red-700');
+    
+    setTimeout(() => {
+      btn.innerText = originalText;
+      btn.classList.remove('bg-green-600', 'hover:bg-green-700');
+      btn.classList.add('bg-red-600', 'hover:bg-red-700');
+    }, 2000);
+  });
+}
+
+// Close modal on outside click
+els.shareModal.addEventListener('click', (e) => {
+  if (e.target === els.shareModal) closeShareModal();
+});
+
+// --- HELPERS ---
 
 function playNext() {
-  loadVideo((state.currentIndex + 1) % state.videoList.length);
-  showToast('⏭️ Next');
+  if(state.filtered.length === 0) return;
+  let nextIndex = state.currentIndex + 1;
+  if(nextIndex >= state.filtered.length) nextIndex = 0;
+  loadVideoState(nextIndex);
 }
 
-function playPrev() {
-  loadVideo((state.currentIndex - 1 + state.videoList.length) % state.videoList.length);
+function renderPlaylist() {
+  els.playlist.innerHTML = '';
+  state.filtered.forEach((vid, idx) => {
+    const div = document.createElement('div');
+    div.className = "flex gap-3 p-2 hover:bg-gray-800 rounded-lg cursor-pointer transition-colors group";
+    div.dataset.index = idx;
+    div.onclick = () => loadVideoState(idx);
+    
+    div.innerHTML = `
+      <div class="relative w-32 h-20 flex-shrink-0 bg-gray-900 rounded-md overflow-hidden">
+        <img src="${vid.thumbnail}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+        <span class="absolute bottom-1 right-1 bg-black/80 text-[10px] px-1 rounded text-white">${vid.duration || '0:00'}</span>
+      </div>
+      <div class="flex flex-col justify-center">
+        <h4 class="text-sm font-semibold text-gray-200 line-clamp-2 leading-snug group-hover:text-white transition-colors">${vid.title}</h4>
+        <p class="text-xs text-gray-500 mt-1">Video ${idx + 1}</p>
+      </div>
+    `;
+    els.playlist.appendChild(div);
+  });
+  els.videoCount.textContent = `${state.filtered.length} videos`;
 }
 
-// === KEYBOARD ===
-document.addEventListener('keydown', debounce((e) => {
-  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-  
-  switch(e.key.toLowerCase()) {
-    case ' ': case 'k':
-      if (state.player) { e.preventDefault(); state.player.togglePlay(); }
-      break;
-    case 'arrowright':
-      if (e.shiftKey) { e.preventDefault(); playNext(); }
-      else if (state.player) state.player.seek(state.player.currentTime + 10);
-      break;
-    case 'arrowleft':
-      if (e.shiftKey) { e.preventDefault(); playPrev(); }
-      else if (state.player) state.player.seek(Math.max(0, state.player.currentTime - 10));
-      break;
-    case 'f': if (state.player) state.player.fullscreen.toggle(); break;
-    case 'm': if (state.player) state.player.muted = !state.player.muted; break;
-    case 'j': if (state.player) state.player.seek(Math.max(0, state.player.currentTime - 10)); break;
-    case 'l': if (state.player) state.player.seek(state.player.currentTime + 10); break;
-  }
-}, 50));
-
-// === LOAD DATA ===
-function loadData() {
-  try {
-    const l = localStorage.getItem('yt_likes');
-    const f = localStorage.getItem('yt_favorites');
-    if (l) state.likes = JSON.parse(l);
-    if (f) state.favorites = JSON.parse(f);
-  } catch(e) {
-    state.likes = {};
-    state.favorites = {};
+function highlightPlaylistItem(index) {
+  const items = els.playlist.children;
+  for(let item of items) {
+    item.classList.remove('bg-gray-800', 'ring-1', 'ring-red-500');
+    if(parseInt(item.dataset.index) === index) {
+      item.classList.add('bg-gray-800', 'ring-1', 'ring-red-500');
+      item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
   }
 }
 
-// === INIT ===
-async function init() {
-  console.log('🎬 Initializing YouTube Clone (Clean Player)...');
-  
-  if (typeof videoList === 'undefined' || !videoList.length) {
-    dom.playerSkeleton.innerHTML = `<div class="text-center p-8"><i class="fa-solid fa-exclamation-triangle text-5xl text-yellow-500 mb-4 block"></i><p class="text-xl font-semibold mb-2">No Videos</p><p class="text-sm text-gray-400">Check list.js</p></div>`;
-    return;
-  }
-  
-  state.videoList = videoList;
-  loadData();
-  
-  const params = new URLSearchParams(location.search);
-  const id = params.get('id');
-  let startIdx = 0;
-  if (id) {
-    const found = state.videoList.findIndex(v => v.id === id);
-    if (found !== -1) startIdx = found;
-  }
-  
-  await loadVideo(startIdx);
-  console.log(`✅ Ready! ${state.videoList.length} videos | Clean Player: ON`);
+function formatTime(seconds) {
+  if(!seconds || isNaN(seconds)) return "0:00";
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${m}:${s < 10 ? '0' : ''}${s}`;
 }
 
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', init);
-} else {
-  init();
+function loadYouTubeAPI(callback) {
+  const tag = document.createElement('script');
+  tag.src = "https://www.youtube.com/iframe_api";
+  const firstScriptTag = document.getElementsByTagName('script')[0];
+  firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+  tag.onload = callback;
 }
+
+// Search Filter
+document.getElementById('search').addEventListener('input', (e) => {
+  const term = e.target.value.toLowerCase();
+  state.filtered = state.videos.filter(v => v.title.toLowerCase().includes(term));
+  renderPlaylist();
+});
+
+// Start
+init();
+
 </script>
 </body>
 </html>
