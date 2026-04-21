@@ -3,98 +3,191 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin Dashboard</title>
+<title>Admin Dashboard | Unscplay</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <style>
-  /* Custom Scrollbar */
+  /* --- THEME VARIABLES (Matches Rest of App) --- */
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: rgba(240, 240, 240, 0.7);
+    --glass-border: rgba(0, 0, 0, 0.1);
+    --text-main: #0f0f0f;
+    --text-muted: #606060;
+    --accent: #ff0000; 
+    --card-bg: rgba(255, 255, 255, 0.5);
+    --input-bg: rgba(0, 0, 0, 0.05);
+  }
+
+  body.theme-ny-dark {
+    --bg-primary: #000000;
+    --bg-secondary: rgba(20, 20, 20, 0.6);
+    --glass-border: rgba(255, 255, 255, 0.15);
+    --text-main: #ffffff;
+    --text-muted: #aaaaaa;
+    --accent: #ff0000;
+    --card-bg: rgba(30, 30, 30, 0.6);
+    --input-bg: rgba(0, 0, 0, 0.3);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    body:not(.theme-ny-dark):not(.theme-white) {
+        --bg-primary: #0f0f0f;
+        --bg-secondary: rgba(39, 39, 39, 0.6);
+        --glass-border: rgba(255, 255, 255, 0.1);
+        --text-main: #ffffff;
+        --text-muted: #aaaaaa;
+        --accent: #ff0000;
+        --card-bg: rgba(30, 30, 30, 0.6);
+        --input-bg: rgba(0, 0, 0, 0.3);
+    }
+  }
+
+  body { 
+    background-color: var(--bg-primary); 
+    color: var(--text-main); 
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  /* GLASS UTILS */
+  .glass-panel {
+    background: var(--bg-secondary);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--glass-border);
+  }
+  
+  .glass-card {
+    background: var(--card-bg);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--glass-border);
+  }
+
+  /* SCROLLBAR */
   ::-webkit-scrollbar { width: 8px; height: 8px; }
-  ::-webkit-scrollbar-track { background: #0f0f0f; }
-  ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
-  ::-webkit-scrollbar-thumb:hover { background: #555; }
+  ::-webkit-scrollbar-track { background: var(--bg-primary); }
+  ::-webkit-scrollbar-thumb { background: var(--text-muted); border-radius: 4px; opacity: 0.5; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+  /* TOAST NOTIFICATION */
+  #toast-container {
+    position: fixed; bottom: 20px; right: 20px; z-index: 100;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .toast {
+    background: var(--bg-secondary);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+    color: var(--text-main);
+    padding: 12px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    display: flex; align-items: center; gap: 10px;
+    animation: slideIn 0.3s ease-out forwards;
+    min-width: 250px;
+  }
+  @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 </style>
+
+<link rel="icon" type="image/png" href="img/logo.png">
 </head>
 
-<body class="bg-[#0f0f0f] text-white font-sans antialiased min-h-screen flex flex-col">
+<body class="font-sans antialiased min-h-screen flex flex-col">
 
 <!-- TOP BAR -->
-<nav class="sticky top-0 z-40 bg-[#0f0f0f]/95 backdrop-blur border-b border-gray-800 px-6 py-4">
+<nav class="sticky top-0 z-40 glass-panel px-6 py-4 transition-colors duration-300">
   <div class="max-w-7xl mx-auto flex justify-between items-center">
     
     <!-- Logo -->
-    <div class="flex items-center gap-3">
-      <i class="fa-solid fa-shield-halved text-red-600 text-2xl"></i>
-      <h1 class="text-xl font-bold tracking-wide hidden sm:block">Admin Dashboard</h1>
+    <div class="flex items-center gap-3 cursor-pointer" onclick="window.location.href='index.html'">
+      <div class="w-8 h-8 bg-[var(--accent)] rounded-lg flex items-center justify-center text-white shadow-lg">
+        <i class="fa-solid fa-shield-halved text-sm"></i>
+      </div>
+      <h1 class="text-xl font-bold tracking-wide hidden sm:block text-[var(--text-main)]">Admin<span style="color:var(--accent)">Panel</span></h1>
     </div>
 
-    <!-- Admin Profile & Logout -->
+    <!-- RIGHT ACTIONS -->
     <div class="flex items-center gap-4">
-      <div class="text-right hidden md:block">
-        <p id="adminName" class="text-sm font-bold text-white">Loading...</p>
-        <p id="adminEmail" class="text-xs text-gray-400">...</p>
-      </div>
-      
-      <div id="adminAvatar" class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center font-bold text-lg shadow-lg border border-gray-700">
-        A
+      <!-- Theme Selector -->
+      <div class="relative group">
+        <button class="w-9 h-9 rounded-full flex items-center justify-center hover:bg-[var(--input-bg)] text-[var(--text-main)] transition-colors">
+          <i class="fa-solid fa-palette"></i>
+        </button>
+        <div class="absolute right-0 mt-2 w-40 bg-[var(--bg-secondary)] backdrop-blur-xl border border-[var(--glass-border)] rounded-xl hidden group-hover:block p-2 shadow-xl z-50">
+            <button onclick="setTheme('system')" class="w-full text-left px-3 py-2 text-sm text-[var(--text-main)] hover:bg-[var(--input-bg)] rounded-lg">System</button>
+            <button onclick="setTheme('ny-dark')" class="w-full text-left px-3 py-2 text-sm text-[var(--text-main)] hover:bg-[var(--input-bg)] rounded-lg">NY Dark</button>
+            <button onclick="setTheme('white')" class="w-full text-left px-3 py-2 text-sm text-[var(--text-main)] hover:bg-[var(--input-bg)] rounded-lg">White</button>
+        </div>
       </div>
 
-      <button onclick="logout()" class="ml-2 bg-[#1f1f1f] hover:bg-red-600/20 hover:text-red-500 border border-gray-700 text-gray-300 px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2">
-        <i class="fa-solid fa-right-from-bracket"></i> <span class="hidden sm:inline">Logout</span>
-      </button>
+      <!-- Admin Profile -->
+      <div class="flex items-center gap-3 pl-4 border-l border-[var(--glass-border)]">
+        <div class="text-right hidden md:block">
+          <p id="adminName" class="text-sm font-bold text-[var(--text-main)]">Loading...</p>
+          <p id="adminEmail" class="text-xs text-[var(--text-muted)]">...</p>
+        </div>
+        
+        <div id="adminAvatar" class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center font-bold text-lg text-white shadow-lg border border-[var(--glass-border)]">
+          A
+        </div>
+
+        <button onclick="logout()" class="ml-2 bg-[var(--input-bg)] hover:bg-red-600/20 hover:text-red-500 border border-[var(--glass-border)] text-[var(--text-muted)] px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2">
+          <i class="fa-solid fa-right-from-bracket"></i> <span class="hidden sm:inline">Logout</span>
+        </button>
+      </div>
     </div>
-
   </div>
 </nav>
 
 <!-- MAIN CONTENT -->
 <div class="flex-grow p-4 sm:p-6 max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-  <!-- LEFT COLUMN: ADD FORM (4 Cols) -->
+  <!-- LEFT COLUMN: ADD FORM -->
   <div class="lg:col-span-4 xl:col-span-3">
-    <div class="bg-[#1f1f1f] border border-gray-800 p-5 rounded-xl shadow-lg sticky top-24">
-      <h2 class="text-lg font-bold mb-4 flex items-center gap-2 text-blue-500">
-        <i class="fa-solid fa-plus-circle"></i> Add Video
+    <div class="glass-card p-5 rounded-xl shadow-lg sticky top-24 transition-colors duration-300">
+      <h2 class="text-lg font-bold mb-4 flex items-center gap-2 text-[var(--text-main)]">
+        <i class="fa-solid fa-plus-circle text-[var(--accent)]"></i> Add Video
       </h2>
 
       <div class="space-y-4">
         <div>
-          <label class="block text-xs font-bold text-gray-500 uppercase mb-1">YouTube ID</label>
-          <input id="videoId" class="w-full bg-[#0f0f0f] border border-gray-700 rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none transition text-sm" placeholder="e.g. dQw4w9WgXcQ">
+          <label class="block text-xs font-bold text-[var(--text-muted)] uppercase mb-1">YouTube ID</label>
+          <input id="videoId" class="w-full bg-[var(--input-bg)] border border-[var(--glass-border)] rounded-lg px-3 py-2 focus:border-[var(--accent)] focus:outline-none transition text-sm text-[var(--text-main)]" placeholder="e.g. dQw4w9WgXcQ">
         </div>
 
         <div>
-          <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Title</label>
-          <input id="title" class="w-full bg-[#0f0f0f] border border-gray-700 rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none transition text-sm" placeholder="Video Title">
+          <label class="block text-xs font-bold text-[var(--text-muted)] uppercase mb-1">Title</label>
+          <input id="title" class="w-full bg-[var(--input-bg)] border border-[var(--glass-border)] rounded-lg px-3 py-2 focus:border-[var(--accent)] focus:outline-none transition text-sm text-[var(--text-main)]" placeholder="Video Title">
         </div>
 
         <div>
-          <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Duration</label>
-          <input id="duration" class="w-full bg-[#0f0f0f] border border-gray-700 rounded-lg px-3 py-2 focus:border-blue-500 focus:outline-none transition text-sm" placeholder="10:00">
+          <label class="block text-xs font-bold text-[var(--text-muted)] uppercase mb-1">Duration</label>
+          <input id="duration" class="w-full bg-[var(--input-bg)] border border-[var(--glass-border)] rounded-lg px-3 py-2 focus:border-[var(--accent)] focus:outline-none transition text-sm text-[var(--text-main)]" placeholder="10:00">
         </div>
 
-        <button onclick="addVideo()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-lg transition mt-2 shadow-lg shadow-blue-900/20">
+        <button onclick="addVideo()" class="w-full bg-[var(--accent)] hover:opacity-90 text-white font-bold py-2.5 rounded-lg transition mt-2 shadow-lg shadow-red-900/20">
           Publish Video
         </button>
       </div>
     </div>
   </div>
 
-  <!-- RIGHT COLUMN: VIDEO LIST (8 Cols) -->
+  <!-- RIGHT COLUMN: VIDEO LIST -->
   <div class="lg:col-span-8 xl:col-span-9">
-    <div class="bg-[#1f1f1f] border border-gray-800 rounded-xl shadow-lg overflow-hidden flex flex-col h-[calc(100vh-140px)]">
+    <div class="glass-card rounded-xl shadow-lg overflow-hidden flex flex-col h-[calc(100vh-140px)] transition-colors duration-300">
       
       <!-- List Header -->
-      <div class="p-4 border-b border-gray-800 flex justify-between items-center bg-[#252525]">
-        <h2 class="font-bold flex items-center gap-2">
-          <i class="fa-solid fa-film text-gray-400"></i> Video Library
+      <div class="p-4 border-b border-[var(--glass-border)] flex justify-between items-center bg-[var(--bg-secondary)]/50">
+        <h2 class="font-bold flex items-center gap-2 text-[var(--text-main)]">
+          <i class="fa-solid fa-film text-[var(--text-muted)]"></i> Video Library
         </h2>
-        <span id="totalCount" class="bg-gray-800 text-xs px-2 py-1 rounded text-gray-300 border border-gray-700">0 Videos</span>
+        <span id="totalCount" class="bg-[var(--input-bg)] text-xs px-2 py-1 rounded text-[var(--text-muted)] border border-[var(--glass-border)]">0 Videos</span>
       </div>
 
       <!-- Scrollable List -->
-      <div class="overflow-y-auto p-2 space-y-2 flex-grow" id="videosList">
+      <div class="overflow-y-auto p-2 space-y-2 flex-grow custom-scrollbar" id="videosList">
         <!-- Skeleton Loader -->
-        <div class="p-4 text-center text-gray-500">
+        <div class="p-4 text-center text-[var(--text-muted)]">
           <i class="fa-solid fa-circle-notch fa-spin text-2xl"></i>
         </div>
       </div>
@@ -106,75 +199,104 @@
 
 <!-- EDIT MODAL -->
 <div id="editModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center opacity-0 transition-opacity duration-300">
-  <div class="bg-[#1f1f1f] border border-gray-700 p-6 rounded-xl w-full max-w-md shadow-2xl transform scale-95 transition-transform duration-300" id="editBox">
-    <h2 class="text-xl font-bold mb-4">Edit Video Details</h2>
+  <div class="glass-card p-6 rounded-xl w-full max-w-md shadow-2xl transform scale-95 transition-transform duration-300" id="editBox">
+    <h2 class="text-xl font-bold mb-4 text-[var(--text-main)]">Edit Video Details</h2>
 
     <div class="space-y-3">
       <input id="editDbId" type="hidden"> <!-- MongoDB _id -->
       
       <div>
-        <label class="text-xs text-gray-500 uppercase font-bold">YouTube ID</label>
-        <input id="editYtId" class="w-full bg-[#0f0f0f] border border-gray-700 rounded px-3 py-2 mt-1 focus:border-blue-500 outline-none">
+        <label class="text-xs text-[var(--text-muted)] uppercase font-bold">YouTube ID</label>
+        <input id="editYtId" class="w-full bg-[var(--input-bg)] border border-[var(--glass-border)] rounded px-3 py-2 mt-1 focus:border-[var(--accent)] outline-none text-[var(--text-main)]">
       </div>
       
       <div>
-        <label class="text-xs text-gray-500 uppercase font-bold">Title</label>
-        <input id="editTitle" class="w-full bg-[#0f0f0f] border border-gray-700 rounded px-3 py-2 mt-1 focus:border-blue-500 outline-none">
+        <label class="text-xs text-[var(--text-muted)] uppercase font-bold">Title</label>
+        <input id="editTitle" class="w-full bg-[var(--input-bg)] border border-[var(--glass-border)] rounded px-3 py-2 mt-1 focus:border-[var(--accent)] outline-none text-[var(--text-main)]">
       </div>
 
       <div>
-        <label class="text-xs text-gray-500 uppercase font-bold">Duration</label>
-        <input id="editDuration" class="w-full bg-[#0f0f0f] border border-gray-700 rounded px-3 py-2 mt-1 focus:border-blue-500 outline-none">
+        <label class="text-xs text-[var(--text-muted)] uppercase font-bold">Duration</label>
+        <input id="editDuration" class="w-full bg-[var(--input-bg)] border border-[var(--glass-border)] rounded px-3 py-2 mt-1 focus:border-[var(--accent)] outline-none text-[var(--text-main)]">
       </div>
     </div>
 
     <div class="flex gap-3 mt-6">
-      <button onclick="saveEdit()" class="flex-1 bg-blue-600 hover:bg-blue-700 py-2 rounded font-bold transition">Save</button>
-      <button onclick="closeModal()" class="flex-1 bg-gray-700 hover:bg-gray-600 py-2 rounded transition">Cancel</button>
+      <button onclick="saveEdit()" class="flex-1 bg-[var(--accent)] hover:opacity-90 py-2 rounded font-bold transition text-white">Save Changes</button>
+      <button onclick="closeModal()" class="flex-1 bg-[var(--input-bg)] hover:bg-[var(--glass-border)] py-2 rounded transition text-[var(--text-main)] border border-[var(--glass-border)]">Cancel</button>
     </div>
   </div>
 </div>
 
+<!-- TOAST CONTAINER -->
+<div id="toast-container"></div>
+
 <script>
 const API = "http://localhost:5000/api/videos";
 
-// ================= 1. HIGH SECURITY CHECK =================
+// ================= THEME LOGIC =================
+function setTheme(themeName) {
+  document.body.classList.remove('theme-ny-dark', 'theme-white');
+  if (themeName === 'ny-dark') {
+    document.body.classList.add('theme-ny-dark');
+    localStorage.setItem('theme', 'ny-dark');
+  } else if (themeName === 'white') {
+    document.body.classList.add('theme-white');
+    localStorage.setItem('theme', 'white');
+  } else {
+    localStorage.removeItem('theme');
+  }
+}
+(function initTheme() {
+  const savedTheme = localStorage.getItem('theme');
+  if (savedTheme) setTheme(savedTheme);
+})();
+
+// ================= SECURITY & AUTH =================
 function checkAuth() {
   const token = localStorage.getItem("token");
   const userStr = localStorage.getItem("user");
 
-  // Must have token AND user data
   if (!token || !userStr) {
     window.location.href = "auth.html";
     return null;
   }
 
-  const user = JSON.parse(userStr);
+  try {
+    const user = JSON.parse(userStr);
+    
+    // STRICT ROLE CHECK
+    if (user.role !== 'admin') {
+      showToast("⛔ Access Denied: Administrators Only.", "error");
+      setTimeout(() => window.location.href = "index.html", 1500);
+      return null;
+    }
 
-  // STRICT ROLE CHECK
-  if (user.role !== 'admin') {
-    alert("⛔ Access Denied: Administrators Only.");
-    window.location.href = "index.html"; // Kick to home
+    // Securely Update UI (Prevent XSS)
+    document.getElementById("adminName").textContent = user.name;
+    document.getElementById("adminEmail").textContent = user.email;
+    document.getElementById("adminAvatar").textContent = user.name.charAt(0).toUpperCase();
+    
+    return token;
+  } catch (e) {
+    console.error("Auth Parse Error", e);
+    logout();
     return null;
   }
-
-  // ✅ UPDATE UI WITH REAL DATA
-  document.getElementById("adminName").innerText = user.name;
-  document.getElementById("adminEmail").innerText = user.email;
-  document.getElementById("adminAvatar").innerText = user.name.charAt(0).toUpperCase();
-  
-  return token;
 }
 
 const token = checkAuth();
 
-// ================= 2. LOAD VIDEOS (LIST VIEW) =================
+// ================= DATA LOADING =================
 async function loadVideos() {
   try {
-    const res = await fetch(API);
-    const data = await res.json();
+    const res = await fetch(API, {
+        headers: { "Authorization": token } // Secure header
+    });
     
-    // Handle response structure
+    if(res.status === 401) { logout(); return; } // Auto logout if token invalid
+
+    const data = await res.json();
     const videos = Array.isArray(data) ? data : (data.videos || []);
     
     document.getElementById("totalCount").innerText = `${videos.length} Videos`;
@@ -190,55 +312,66 @@ function renderList(videos) {
   container.innerHTML = "";
 
   if(videos.length === 0) {
-    container.innerHTML = `<div class="text-gray-500 text-center py-10">No videos found. Add one on the left.</div>`;
+    container.innerHTML = `<div class="text-[var(--text-muted)] text-center py-10">No videos found. Add one on the left.</div>`;
     return;
   }
 
   videos.forEach(v => {
     const div = document.createElement("div");
-    // List Item Styling
-    div.className = "flex items-center gap-4 bg-[#0f0f0f] p-3 rounded-lg border border-gray-800 hover:border-gray-600 transition group";
+    div.className = "flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-[var(--bg-primary)] p-3 rounded-lg border border-[var(--glass-border)] hover:border-[var(--accent)] transition group";
     
-    div.innerHTML = `
-      <!-- Thumbnail -->
-      <div class="relative w-32 sm:w-40 flex-shrink-0 aspect-video bg-black rounded overflow-hidden">
+    // Using DOM creation for security (prevents XSS in titles)
+    const thumbDiv = document.createElement("div");
+    thumbDiv.className = "relative w-full sm:w-40 aspect-video bg-black rounded overflow-hidden flex-shrink-0";
+    thumbDiv.innerHTML = `
         <img src="${v.thumbnail}" class="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition">
         <span class="absolute bottom-1 right-1 bg-black/80 text-[10px] px-1 rounded text-white font-mono">${v.duration}</span>
-      </div>
-      
-      <!-- Info -->
-      <div class="flex-1 min-w-0">
-        <h3 class="font-bold text-sm sm:text-base truncate text-gray-200 group-hover:text-white mb-1">${v.title}</h3>
-        <div class="flex flex-wrap gap-3 text-xs text-gray-500 font-mono">
-          <span><i class="fa-brands fa-youtube mr-1"></i>${v.id}</span>
-          <span class="hidden sm:inline">• DB: ${v._id.substring(0,8)}...</span>
-        </div>
-      </div>
-
-      <!-- Actions -->
-      <div class="flex flex-col sm:flex-row gap-2">
-        <button onclick='openEdit(${JSON.stringify(v).replace(/'/g, "&apos;")})' 
-          class="bg-gray-800 hover:bg-blue-600 text-blue-400 hover:text-white w-8 h-8 sm:w-auto sm:px-3 rounded flex items-center justify-center transition" title="Edit">
-          <i class="fa-solid fa-pen"></i> <span class="hidden sm:inline ml-1">Edit</span>
-        </button>
-        
-        <button onclick="deleteVideo('${v._id}')" 
-          class="bg-gray-800 hover:bg-red-600 text-red-400 hover:text-white w-8 h-8 sm:w-auto sm:px-3 rounded flex items-center justify-center transition" title="Delete">
-          <i class="fa-solid fa-trash"></i> <span class="hidden sm:inline ml-1">Del</span>
-        </button>
-      </div>
     `;
+
+    const infoDiv = document.createElement("div");
+    infoDiv.className = "flex-1 min-w-0 w-full";
+    
+    const titleEl = document.createElement("h3");
+    titleEl.className = "font-bold text-sm sm:text-base truncate text-[var(--text-main)] group-hover:text-[var(--accent)] mb-1";
+    titleEl.textContent = v.title; // SECURE TEXT INSERTION
+    
+    const metaEl = document.createElement("div");
+    metaEl.className = "flex flex-wrap gap-3 text-xs text-[var(--text-muted)] font-mono";
+    metaEl.innerHTML = `<span><i class="fa-brands fa-youtube mr-1"></i>${v.id}</span>`;
+
+    infoDiv.appendChild(titleEl);
+    infoDiv.appendChild(metaEl);
+
+    const actionDiv = document.createElement("div");
+    actionDiv.className = "flex gap-2 w-full sm:w-auto mt-2 sm:mt-0";
+    actionDiv.innerHTML = `
+        <button class="flex-1 sm:flex-none bg-[var(--input-bg)] hover:bg-blue-600 hover:text-white text-blue-500 px-3 py-1.5 rounded text-sm transition border border-[var(--glass-border)]">
+          <i class="fa-solid fa-pen"></i> Edit
+        </button>
+        <button class="flex-1 sm:flex-none bg-[var(--input-bg)] hover:bg-red-600 hover:text-white text-red-500 px-3 py-1.5 rounded text-sm transition border border-[var(--glass-border)]">
+          <i class="fa-solid fa-trash"></i>
+        </button>
+    `;
+    
+    // Event Listeners
+    actionDiv.children[0].onclick = () => openEdit(v);
+    actionDiv.children[1].onclick = () => deleteVideo(v._id);
+
+    div.appendChild(thumbDiv);
+    div.appendChild(infoDiv);
+    div.appendChild(actionDiv);
+    
     container.appendChild(div);
   });
 }
 
-// ================= 3. ADD VIDEO =================
+// ================= CRUD OPERATIONS =================
 async function addVideo() {
   const id = document.getElementById("videoId").value.trim();
   const title = document.getElementById("title").value.trim();
   const duration = document.getElementById("duration").value.trim();
 
-  if(!id || !title) return alert("ID and Title are required");
+  if(!id || !title) return showToast("ID and Title are required", "error");
 
   const btn = document.querySelector("button[onclick='addVideo()']");
   const originalText = btn.innerText;
@@ -257,37 +390,41 @@ async function addVideo() {
 
     if(!res.ok) throw new Error("Failed");
 
-    // Reset Form
+    showToast("Video Published Successfully", "success");
     document.getElementById("videoId").value = "";
     document.getElementById("title").value = "";
     document.getElementById("duration").value = "";
-    
     loadVideos(); 
 
   } catch(err) {
-    alert("Error adding video");
+    showToast("Error adding video", "error");
   } finally {
     btn.innerText = originalText;
     btn.disabled = false;
   }
 }
 
-// ================= 4. DELETE =================
 async function deleteVideo(dbId) {
   if(!confirm("Are you sure? This cannot be undone.")) return;
 
   try {
-    await fetch(`${API}/${dbId}`, {
+    const res = await fetch(`${API}/${dbId}`, {
       method: "DELETE",
       headers: { "Authorization": token }
     });
-    loadVideos();
+    
+    if(res.ok) {
+        showToast("Video Deleted", "success");
+        loadVideos();
+    } else {
+        throw new Error("Delete failed");
+    }
   } catch(err) {
-    alert("Delete failed");
+    showToast("Delete failed", "error");
   }
 }
 
-// ================= 5. EDIT LOGIC =================
+// ================= EDIT MODAL =================
 function openEdit(videoObj) {
   document.getElementById("editDbId").value = videoObj._id;
   document.getElementById("editYtId").value = videoObj.id;
@@ -296,7 +433,6 @@ function openEdit(videoObj) {
   
   const modal = document.getElementById("editModal");
   modal.classList.remove("hidden");
-  // Animation trigger
   setTimeout(() => {
     modal.classList.remove("opacity-0");
     document.getElementById("editBox").classList.remove("scale-95");
@@ -308,9 +444,7 @@ function closeModal() {
   const modal = document.getElementById("editModal");
   modal.classList.add("opacity-0");
   document.getElementById("editBox").classList.add("scale-95");
-  setTimeout(() => {
-    modal.classList.add("hidden");
-  }, 300);
+  setTimeout(() => modal.classList.add("hidden"), 300);
 }
 
 async function saveEdit() {
@@ -320,7 +454,7 @@ async function saveEdit() {
   const duration = document.getElementById("editDuration").value;
 
   try {
-    await fetch(`${API}/${dbId}`, {
+    const res = await fetch(`${API}/${dbId}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -329,17 +463,38 @@ async function saveEdit() {
       body: JSON.stringify({ id, title, duration })
     });
     
-    closeModal();
-    loadVideos();
+    if(res.ok) {
+        closeModal();
+        showToast("Video Updated", "success");
+        loadVideos();
+    } else {
+        throw new Error("Update failed");
+    }
   } catch(err) {
-    alert("Update failed");
+    showToast("Update failed", "error");
   }
 }
 
-// ================= 6. LOGOUT =================
+// ================= UTILS =================
 function logout() {
   localStorage.clear();
   window.location.href = "auth.html";
+}
+
+function showToast(msg, type) {
+    const container = document.getElementById("toast-container");
+    const toast = document.createElement("div");
+    toast.className = "toast";
+    
+    const icon = type === 'success' ? '<i class="fa-solid fa-check-circle text-green-500"></i>' : '<i class="fa-solid fa-circle-exclamation text-red-500"></i>';
+    
+    toast.innerHTML = `${icon} <span>${msg}</span>`;
+    container.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
 }
 
 // INIT

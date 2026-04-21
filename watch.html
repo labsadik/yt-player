@@ -2,84 +2,114 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pro Stream Player</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Unscplay</title>
 
 <!-- Tailwind CSS -->
 <script src="https://cdn.tailwindcss.com"></script>
-<script>
-  tailwind.config = {
-    theme: {
-      extend: {
-        colors: {
-          'yt-black': '#0f0f0f',
-          'yt-dark': '#272727',
-          'yt-gray': '#aaaaaa',
-          'yt-red': '#ff0000'
-        }
-      }
-    }
-  }
-</script>
 
-<!-- Video.js CSS (Used for structure, but customized heavily) -->
-<link href="https://vjs.zencdn.net/8.6.1/video-js.css" rel="stylesheet" />
 <!-- Font Awesome -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
-<style>
-  body { background-color: #0f0f0f; color: white; font-family: 'Inter', sans-serif; }
-  
-  /* Custom Scrollbar */
-  ::-webkit-scrollbar { width: 8px; }
-  ::-webkit-scrollbar-track { background: #0f0f0f; }
-  ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
-  ::-webkit-scrollbar-thumb:hover { background: #555; }
 
-  /* --- PLAYER LAYOUT & Z-INDEX FIXES --- */
+<style>
+  /* --- THEME VARIABLES --- */
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: rgba(240, 240, 240, 0.7);
+    --glass-border: rgba(0, 0, 0, 0.1);
+    --text-main: #0f0f0f;
+    --text-muted: #606060;
+    --accent: #ff0000; 
+    --accent-hover: #cc0000;
+    --control-bg: rgba(255, 255, 255, 0.2);
+    --shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  }
+
+  /* NEW YORK DARK MODE */
+  body.theme-ny-dark {
+    --bg-primary: #000000;
+    --bg-secondary: rgba(20, 20, 20, 0.6);
+    --glass-border: rgba(255, 255, 255, 0.15);
+    --text-main: #ffffff;
+    --text-muted: #aaaaaa;
+    --accent: #ff0000;
+    --accent-hover: #ff3333;
+    --control-bg: rgba(0, 0, 0, 0.6);
+    --shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+  }
+
+  /* SYSTEM DEFAULT (Auto) - Uses Media Query logic in JS, but defaults here to light */
+  @media (prefers-color-scheme: dark) {
+    body:not(.theme-ny-dark):not(.theme-white) {
+        --bg-primary: #0f0f0f;
+        --bg-secondary: rgba(39, 39, 39, 0.6);
+        --glass-border: rgba(255, 255, 255, 0.1);
+        --text-main: #ffffff;
+        --text-muted: #aaaaaa;
+        --accent: #ff0000;
+        --accent-hover: #ff3333;
+        --control-bg: rgba(0, 0, 0, 0.6);
+        --shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+    }
+  }
+
+  /* Global Styles */
+  body { 
+    background-color: var(--bg-primary); 
+    color: var(--text-main); 
+    font-family: 'Inter', sans-serif; 
+    transition: background-color 0.3s ease, color 0.3s ease;
+    overflow-x: hidden;
+  }
+  
+  /* Glassmorphism Classes */
+  .glass-panel {
+    background: var(--bg-secondary);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--shadow);
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--text-muted); border-radius: 10px; opacity: 0.5; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+  /* Player Layout */
   .player-container {
-    background-color: #000;
+    background-color: #000; 
     position: relative;
     overflow: hidden;
+    user-select: none; 
+    box-shadow: 0 10px 40px rgba(0,0,0,0.3);
   }
 
-  /* The Video.js wrapper */
-  .video-js {
-    width: 100%;
-    height: 100%;
-    background-color: #000 !important;
+  #yt-api-div {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    z-index: 10;
+    pointer-events: none;
   }
   
-  /* THE YOUTUBE IFRAME - INVISIBLE BUT INTERACTIVE */
-  .vjs-tech {
-    object-fit: contain;
-    width: 100%;
-    height: 100%;
-    position: absolute;
-    top: 0;
-    left: 0;
-    opacity: 0; /* COMPLETELY HIDE YT UI */
-    z-index: 10;
-  }
-
-  /* Custom Control Bar Styling */
+  /* Custom Controls */
   .custom-controls {
     position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+    bottom: 0; left: 0; right: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
     padding: 20px 15px 15px 15px;
     opacity: 0;
     transition: opacity 0.3s ease;
     display: flex;
     flex-direction: column;
     gap: 10px;
-    z-index: 50; /* Above Video */
+    z-index: 50; 
     pointer-events: none; 
+    backdrop-filter: blur(2px);
   }
 
-  /* Show controls on hover or pause */
   .player-container:hover .custom-controls,
   .player-container.paused .custom-controls,
   .custom-controls:hover {
@@ -87,21 +117,10 @@
     pointer-events: auto;
   }
 
-  /* FIX: Prevent scrubber from showing on general player hover */
-  .player-container:hover .scrubber-handle {
-    opacity: 0 !important;
-  }
-
-  /* Only show scrubber when specifically hovering progress bar */
-  .progress-container:hover .scrubber-handle {
-    opacity: 1 !important;
-  }
-
-  /* Progress Bar Container */
+  /* Progress Bar */
   .progress-container {
-    width: 100%;
-    height: 4px;
-    background: rgba(255,255,255,0.2);
+    width: 100%; height: 4px;
+    background: rgba(255,255,255,0.3);
     cursor: pointer;
     position: relative;
     border-radius: 2px;
@@ -110,167 +129,148 @@
   .progress-container:hover { height: 6px; }
 
   .progress-buffered {
-    position: absolute;
-    top: 0; left: 0; bottom: 0;
-    background: rgba(255,255,255,0.3);
-    width: 0%;
-    border-radius: 2px;
-    pointer-events: none;
+    position: absolute; top: 0; left: 0; bottom: 0;
+    background: rgba(255,255,255,0.4);
+    width: 0%; border-radius: 2px; pointer-events: none;
   }
   .progress-played {
-    position: absolute;
-    top: 0; left: 0; bottom: 0;
-    background: #ff0000;
-    width: 0%;
-    border-radius: 2px;
-    pointer-events: none;
+    position: absolute; top: 0; left: 0; bottom: 0;
+    background: var(--accent);
+    width: 0%; border-radius: 2px; pointer-events: none;
+    box-shadow: 0 0 10px var(--accent);
   }
 
   .scrubber-handle {
-    position: absolute;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    width: 12px;
-    height: 12px;
-    background: #ff0000;
-    border-radius: 50%;
-    left: 0%;
-    opacity: 0;
-    transition: opacity 0.15s ease-out;
+    position: absolute; top: 50%; transform: translate(-50%, -50%);
+    width: 12px; height: 12px;
+    background: #fff;
+    border-radius: 50%; left: 0%;
+    opacity: 0; transition: opacity 0.15s ease-out, transform 0.1s;
     pointer-events: none;
-    box-shadow: 0 0 6px rgba(255, 0, 0, 0.6);
+    box-shadow: 0 0 5px rgba(0,0,0,0.5);
     z-index: 55;
   }
 
-  /* Timeline Preview Tooltip */
-  .timeline-preview {
-    position: absolute;
-    bottom: 25px;
-    transform: translateX(-50%);
-    background: #000;
-    border: 1px solid #333;
-    border-radius: 4px;
-    overflow: hidden;
-    display: none;
-    pointer-events: none;
-    z-index: 60;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.8);
-  }
-  .timeline-preview img {
-    width: 160px;
-    height: 90px;
-    object-fit: cover;
-    display: block;
-  }
-  .timeline-time {
-    text-align: center;
-    font-size: 11px;
-    padding: 4px;
-    background: #111;
-    color: white;
-    font-weight: bold;
-  }
+  .player-container:hover .scrubber-handle { opacity: 0 !important; }
+  .progress-container:hover .scrubber-handle { opacity: 1 !important; transform: translate(-50%, -50%) scale(1.2); }
 
-  /* Start Overlay (Thumbnail + Loader/Play Btn) */
+  /* Timeline Preview */
+  .timeline-preview {
+    position: absolute; bottom: 30px; transform: translateX(-50%);
+    background: var(--bg-primary); border: 1px solid var(--glass-border);
+    border-radius: 8px; overflow: hidden;
+    display: none; pointer-events: none; z-index: 60;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+  }
+  .timeline-preview img { width: 160px; height: 90px; object-fit: cover; display: block; }
+  .timeline-time { text-align: center; font-size: 11px; padding: 4px; background: var(--bg-secondary); color: var(--text-main); font-weight: bold; }
+
+  /* Start Overlay */
   .start-overlay {
-    position: absolute;
-    inset: 0;
-    background-size: cover;
-    background-position: center;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    z-index: 40; /* Above Invisible Video */
-    transition: opacity 0.3s;
+    position: absolute; inset: 0;
+    background-size: cover; background-position: center;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; z-index: 40; transition: opacity 0.3s;
     background-color: #000;
   }
   .start-overlay::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: rgba(0,0,0,0.3);
-    transition: background 0.3s;
+    content: ''; position: absolute; inset: 0;
+    background: rgba(0,0,0,0.4); transition: background 0.3s;
+    backdrop-filter: blur(0px);
   }
-  .start-overlay:hover::before { background: rgba(0,0,0,0.1); }
+  .start-overlay:hover::before { backdrop-filter: blur(2px); background: rgba(0,0,0,0.2); }
   
-  /* The Central Button Container */
   .center-btn-container {
-    position: relative;
-    width: 68px;
-    height: 48px;
-    z-index: 41;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    position: relative; width: 68px; height: 48px;
+    z-index: 41; display: flex; align-items: center; justify-content: center;
   }
 
-  /* LOADER SPINNER */
   .loader-spinner {
-    width: 40px;
-    height: 40px;
+    width: 40px; height: 40px;
     border: 3px solid rgba(255,255,255,0.1);
-    border-left-color: #ff0000;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
+    border-left-color: var(--accent);
+    border-radius: 50%; animation: spin 1s linear infinite;
     position: absolute;
   }
 
-  /* BIG PLAY BUTTON */
   .big-play-btn {
-    width: 68px;
-    height: 48px;
-    background: rgba(255, 0, 0, 0.9);
+    width: 68px; height: 48px;
+    background: var(--accent);
     border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: transform 0.2s, background 0.2s;
-    box-shadow: 0 0 20px rgba(255, 0, 0, 0.3);
-    opacity: 0; /* Hidden by default */
-    transform: scale(0.8);
-    transition: all 0.3s ease;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 0 30px var(--accent);
+    opacity: 0; transform: scale(0.8);
   }
   
-  /* State: When Ready to Play */
   .start-overlay.ready .loader-spinner { display: none; }
-  .start-overlay.ready .big-play-btn { 
-    opacity: 1; 
-    transform: scale(1);
-  }
-  .start-overlay.ready:hover .big-play-btn { 
-    transform: scale(1.1); 
-    background: #ff0000;
-  }
+  .start-overlay.ready .big-play-btn { opacity: 1; transform: scale(1); }
+  .start-overlay.ready:hover .big-play-btn { transform: scale(1.1); filter: brightness(1.2); }
 
   @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
   .line-clamp-2 {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+    display: -webkit-box; --webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  
+  /* Mobile Adjustments */
+  @media (max-width: 768px) {
+    .custom-controls { padding-bottom: 10px; }
+    .timeline-preview { display: none !important; } /* Hide preview on mobile to save resources */
   }
 </style>
+<link rel="icon" type="image/png" href="img/logo.png">
 </head>
 <body class="antialiased min-h-screen flex flex-col">
 
 <!-- HEADER -->
-<div class="sticky top-0 z-50 bg-[#0f0f0f]/95 backdrop-blur border-b border-gray-800 px-4 py-3 flex items-center justify-between gap-4">
-  <div class="flex items-center gap-2 cursor-pointer" onclick="window.location.href='index.html'">
-    <div class="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center text-white font-bold">▶</div>
-    <h1 class="text-xl font-bold tracking-tight">Stream<span class="text-red-500">Pro</span></h1>
+<div class="sticky top-0 z-50 glass-panel px-4 py-3 flex items-center justify-between gap-4 transition-colors duration-300">
+ <!-- LOGO -->
+  <div class="flex items-center gap-2 cursor-pointer group" onclick="window.location.href='index.html'">
+    <span class="font-bold text-xl tracking-tight hidden sm:block text-[var(--text-main)]">Unsc<span style="color:var(--accent)">play</span></span>
   </div>
 
+  <!-- Search (Hidden on very small screens, visible on sm+) -->
   <div class="flex-1 max-w-xl relative hidden sm:block">
     <input id="search" type="text" placeholder="Search videos..." 
-      class="w-full bg-[#1a1a1a] border border-gray-700 text-sm rounded-full px-4 py-2 focus:outline-none focus:border-red-500 transition-colors pl-10 text-white">
-    <svg class="w-4 h-4 text-gray-500 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+      class="w-full bg-[var(--bg-secondary)] border border-[var(--glass-border)] text-sm rounded-full px-4 py-2 focus:outline-none focus:border-[var(--accent)] transition-colors pl-10 text-[var(--text-main)] placeholder-[var(--text-muted)]">
+    <i class="fa-solid fa-search absolute left-3 top-2.5 text-[var(--text-muted)]"></i>
   </div>
 
-  <button onclick="playNext()" class="bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-full text-sm font-medium transition-colors flex items-center gap-2">
-    Next <i class="fa-solid fa-forward text-xs"></i>
-  </button>
+  <!-- Theme Chooser & Mobile Search Icon -->
+  <div class="flex items-center gap-3">
+    <!-- Mobile Search Toggle -->
+    <button class="sm:hidden text-[var(--text-main)] p-2" onclick="document.getElementById('mobile-search').classList.toggle('hidden')">
+        <i class="fa-solid fa-search text-lg"></i>
+    </button>
+
+    <!-- Theme Dropdown -->
+    <div class="relative group">
+      <button class="bg-[var(--bg-secondary)] hover:bg-[var(--glass-border)] text-[var(--text-main)] w-10 h-10 rounded-full flex items-center justify-center transition-colors border border-[var(--glass-border)]">
+        <i class="fa-solid fa-palette"></i>
+      </button>
+      <!-- Dropdown Menu -->
+      <div class="absolute right-0 mt-3 w-48 glass-panel rounded-xl hidden group-hover:block p-2 z-50 transform origin-top-right transition-all">
+          <div class="px-3 py-2 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Select Theme</div>
+          
+          <button onclick="setTheme('system')" class="w-full text-left px-3 py-2 text-sm text-[var(--text-main)] hover:bg-[var(--glass-border)] rounded-lg flex items-center gap-3 transition-colors">
+              <i class="fa-solid fa-desktop w-4"></i> System Default
+          </button>
+          <button onclick="setTheme('ny-dark')" class="w-full text-left px-3 py-2 text-sm text-[var(--text-main)] hover:bg-[var(--glass-border)] rounded-lg flex items-center gap-3 transition-colors">
+              <i class="fa-solid fa-moon w-4"></i> New York Dark
+          </button>
+          <button onclick="setTheme('white')" class="w-full text-left px-3 py-2 text-sm text-[var(--text-main)] hover:bg-[var(--glass-border)] rounded-lg flex items-center gap-3 transition-colors">
+              <i class="fa-solid fa-sun w-4"></i> White Mode
+          </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Mobile Search Bar (Hidden by default) -->
+<div id="mobile-search" class="hidden glass-panel p-4 sm:hidden border-b border-[var(--glass-border)]">
+    <input id="search-mobile" type="text" placeholder="Search videos..." 
+    class="w-full bg-[var(--bg-secondary)] border border-[var(--glass-border)] text-sm rounded-full px-4 py-2 focus:outline-none focus:border-[var(--accent)] text-[var(--text-main)]">
 </div>
 
 <!-- MAIN CONTENT -->
@@ -280,31 +280,26 @@
   <div class="lg:col-span-2 space-y-4">
     
     <!-- CUSTOM PLAYER CONTAINER -->
-    <div id="player-wrapper" class="player-container paused relative w-full aspect-video bg-black rounded-xl overflow-hidden shadow-2xl group select-none ring-1 ring-gray-800">
+    <div id="player-wrapper" class="player-container paused relative w-full aspect-video bg-black rounded-xl overflow-hidden ring-1 ring-[var(--glass-border)]">
       
-      <!-- Start Overlay (Thumbnail + Logic based Button) -->
+      <!-- Start Overlay -->
       <div id="start-overlay" class="start-overlay" style="background-image: url('');">
         <div class="center-btn-container">
-          <!-- State 1: Loader -->
           <div class="loader-spinner"></div>
-          <!-- State 2: Play Button (Hidden initially) -->
           <div class="big-play-btn">
             <i class="fa-solid fa-play text-white text-xl ml-1"></i>
           </div>
         </div>
       </div>
 
-      <!-- Video Element (Invisible YouTube Iframe lives here) -->
-      <video id="my-video" class="video-js vjs-default-skin w-full h-full" preload="none">
-        <p class="vjs-no-js">To view this video please enable JavaScript.</p>
-      </video>
+      <!-- YouTube API Target Div (Invisible) -->
+      <div id="yt-api-div"></div>
 
       <!-- Custom Controls -->
       <div class="custom-controls">
         
         <!-- Progress Bar Area -->
         <div class="relative w-full group/progress">
-          <!-- Timeline Preview Popup -->
           <div id="timeline-preview" class="timeline-preview">
             <img id="preview-img" src="" alt="Preview">
             <div id="preview-time" class="timeline-time">00:00</div>
@@ -320,29 +315,21 @@
         <!-- Buttons Row -->
         <div class="flex items-center justify-between mt-1">
           <div class="flex items-center gap-4">
-            <!-- Play/Pause -->
-            <button id="btn-play" class="hover:text-red-500 transition-colors text-white">
+            <!-- Play/Pause Button -->
+            <button id="btn-play" class="hover:text-[var(--accent)] transition-colors text-white focus:outline-none">
               <i id="icon-play" class="fa-solid fa-play text-xl"></i>
               <i id="icon-pause" class="fa-solid fa-pause text-xl hidden"></i>
             </button>
 
-            <!-- Volume -->
-            <div class="flex items-center gap-2 group/vol">
-              <button id="btn-mute" class="hover:text-white text-gray-300">
-                <i class="fa-solid fa-volume-high text-lg"></i>
-              </button>
-              <input type="range" id="vol-slider" min="0" max="1" step="0.1" value="1" class="w-0 overflow-hidden group-hover/vol:w-20 transition-all duration-300 h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-red-500">
-            </div>
-
             <!-- Time Display -->
-            <div class="text-xs font-medium text-gray-300 font-mono">
-              <span id="current-time">0:00</span> / <span id="duration">0:00</span>
+            <div class="text-xs font-medium text-gray-200 font-mono tracking-wide">
+              <span id="current-time">0:00</span> <span class="opacity-50">/</span> <span id="duration">0:00</span>
             </div>
           </div>
 
           <div class="flex items-center gap-3">
              <!-- Fullscreen -->
-             <button id="btn-fullscreen" class="hover:text-white text-gray-300">
+             <button id="btn-fullscreen" class="hover:text-white text-gray-300 focus:outline-none p-2">
                <i class="fa-solid fa-expand text-lg"></i>
              </button>
           </div>
@@ -351,15 +338,11 @@
     </div>
 
     <!-- Video Info & Share -->
-    <div>
-      <h2 id="video-title" class="text-xl lg:text-2xl font-bold leading-tight mb-2 text-white">Loading...</h2>
-      <div class="flex items-center justify-between text-sm text-gray-400 border-b border-gray-800 pb-4">
-        <div class="flex items-center gap-2">
-           <span class="bg-gray-800 px-2 py-1 rounded text-xs text-gray-300">YouTube Source</span>
-        </div>
-        <!-- SHARE BUTTON -->
-        <button onclick="openShareModal()" class="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-full transition-colors">
-          <i class="fa-solid fa-share"></i> Share
+    <div class="glass-panel rounded-xl p-4 sm:p-6">
+      <h2 id="video-title" class="text-xl lg:text-2xl font-bold leading-tight mb-4 text-[var(--text-main)]">Loading...</h2>
+      <div class="flex flex-wrap items-center justify-between gap-4 text-sm text-[var(--text-muted)] border-t border-[var(--glass-border)] pt-4">
+        <button onclick="openShareModal()" class="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white px-6 py-2.5 rounded-full transition-all shadow-lg hover:shadow-[var(--accent)]/30 font-medium">
+          <i class="fa-solid fa-share-nodes"></i> Share Video
         </button>
       </div>
     </div>
@@ -368,12 +351,12 @@
 
   <!-- PLAYLIST (Right) -->
   <div class="lg:col-span-1">
-    <div class="bg-[#121212] rounded-xl border border-gray-800 h-[calc(100vh-120px)] flex flex-col sticky top-24">
-      <div class="p-4 border-b border-gray-800 flex justify-between items-center">
-        <h3 class="font-bold text-lg text-white">Up Next</h3>
-        <span id="video-count" class="text-xs text-gray-500">0 videos</span>
+    <div class="glass-panel rounded-xl h-[calc(100vh-140px)] flex flex-col sticky top-24 transition-colors duration-300">
+      <div class="p-4 border-b border-[var(--glass-border)] flex justify-between items-center bg-[var(--bg-secondary)]/50 rounded-t-xl">
+        <h3 class="font-bold text-lg text-[var(--text-main)]">Up Next</h3>
+        <span id="video-count" class="text-xs text-[var(--text-muted)] bg-[var(--bg-primary)] px-2 py-1 rounded border border-[var(--glass-border)]">0 videos</span>
       </div>
-      <div id="playlist" class="flex-1 overflow-y-auto p-2 space-y-2">
+      <div id="playlist" class="flex-1 overflow-y-auto p-2 space-y-1 custom-scrollbar">
         <!-- Items injected via JS -->
       </div>
     </div>
@@ -382,35 +365,32 @@
 </div>
 
 <!-- SHARE MODAL POPUP -->
-<div id="share-modal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300">
-  <div class="bg-[#1e1e1e] p-6 rounded-2xl shadow-2xl w-full max-w-md transform scale-95 transition-transform duration-300 border border-gray-700" id="share-modal-content">
-    <div class="flex justify-between items-center mb-4">
-      <h3 class="text-lg font-bold text-white">Share Video</h3>
-      <button onclick="closeShareModal()" class="text-gray-400 hover:text-white">
+<div id="share-modal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300 p-4">
+  <div class="glass-panel p-6 rounded-2xl shadow-2xl w-full max-w-md transform scale-95 transition-transform duration-300 border border-[var(--glass-border)]" id="share-modal-content">
+    <div class="flex justify-between items-center mb-6">
+      <h3 class="text-lg font-bold text-[var(--text-main)]">Share Video</h3>
+      <button onclick="closeShareModal()" class="text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors w-8 h-8 flex items-center justify-center rounded-full hover:bg-[var(--glass-border)]">
         <i class="fa-solid fa-xmark text-xl"></i>
       </button>
     </div>
     
-    <div class="mb-4">
-      <label class="block text-xs text-gray-400 mb-1">Video Link</label>
+    <div class="mb-6">
+      <label class="block text-xs text-[var(--text-muted)] mb-2 uppercase tracking-wider font-semibold">Video Link</label>
       <div class="flex gap-2">
-        <input type="text" id="share-url" readonly class="w-full bg-black border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-300 focus:outline-none focus:border-red-500">
-        <button onclick="copyShareLink()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+        <input type="text" id="share-url" readonly class="w-full bg-[var(--bg-primary)] border border-[var(--glass-border)] rounded-lg px-4 py-3 text-sm text-[var(--text-main)] focus:outline-none focus:border-[var(--accent)] font-mono">
+        <button onclick="copyShareLink()" class="bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors shadow-lg shadow-[var(--accent)]/20 whitespace-nowrap">
           Copy
         </button>
       </div>
     </div>
     
     <div class="flex justify-end">
-       <button onclick="closeShareModal()" class="text-sm text-gray-400 hover:text-white">Close</button>
+       <button onclick="closeShareModal()" class="text-sm text-[var(--text-muted)] hover:text-[var(--text-main)] font-medium">Close Panel</button>
     </div>
   </div>
 </div>
 
 <!-- SCRIPTS -->
-<!-- Video.js Core -->
-<script src="https://vjs.zencdn.net/8.6.1/video.min.js"></script>
-
 <script>
 // --- CONFIGURATION ---
 const API_URL = "http://localhost:5000/api/videos"; 
@@ -433,7 +413,6 @@ const els = {
   title: document.getElementById('video-title'),
   playlist: document.getElementById('playlist'),
   startOverlay: document.getElementById('start-overlay'),
-  videoTag: document.getElementById('my-video'),
   wrapper: document.getElementById('player-wrapper'),
   videoCount: document.getElementById('video-count'),
   
@@ -447,7 +426,6 @@ const els = {
   scrubber: document.getElementById('scrubber'),
   currTime: document.getElementById('current-time'),
   durTime: document.getElementById('duration'),
-  volSlider: document.getElementById('vol-slider'),
   btnFull: document.getElementById('btn-fullscreen'),
   
   // Preview
@@ -461,19 +439,48 @@ const els = {
   shareUrlInput: document.getElementById('share-url')
 };
 
+// --- THEME LOGIC ---
+function setTheme(themeName) {
+  // Remove existing theme classes
+  document.body.classList.remove('theme-ny-dark', 'theme-white');
+  
+  if (themeName === 'ny-dark') {
+    document.body.classList.add('theme-ny-dark');
+    localStorage.setItem('theme', 'ny-dark');
+  } else if (themeName === 'white') {
+    document.body.classList.add('theme-white');
+    localStorage.setItem('theme', 'white');
+  } else {
+    // System Default (remove specific classes, let CSS media query handle it)
+    localStorage.removeItem('theme');
+  }
+}
+
+// Initialize Theme from LocalStorage or System
+(function initTheme() {
+  const savedTheme = localStorage.getItem('theme');
+  if (savedTheme) {
+    setTheme(savedTheme);
+  }
+})();
+
+// --- NAVIGATION ---
+function goHome() {
+  // Clear ID param and reload to show first video or reset state
+  window.location.href = window.location.pathname;
+}
+
 // --- INITIALIZATION ---
 async function init() {
   try {
     const res = await fetch(API_URL);
     
-    if (!res.ok) {
-      throw new Error(`API responded with status: ${res.status}`);
-    }
+    if (!res.ok) throw new Error(`API Status: ${res.status}`);
     
     const data = await res.json();
     
     if (!Array.isArray(data.videos) || data.videos.length === 0) {
-      throw new Error('No videos found in API response');
+      throw new Error('No videos found');
     }
     
     state.videos = data.videos;
@@ -488,15 +495,13 @@ async function init() {
     let startIndex = 0;
     if (videoId) {
       const foundIndex = state.filtered.findIndex(v => v.id === videoId);
-      if (foundIndex !== -1) {
-        startIndex = foundIndex;
-      }
+      if (foundIndex !== -1) startIndex = foundIndex;
     }
     
     loadVideoState(startIndex);
     
   } catch (err) {
-    console.error("Failed to load videos from API:", err);
+    console.error("Init Error:", err);
     showErrorState(err.message);
   }
 }
@@ -504,11 +509,11 @@ async function init() {
 function showErrorState(message) {
   els.title.textContent = 'Error Loading Videos';
   els.playlist.innerHTML = `
-    <div class="flex flex-col items-center justify-center h-full text-gray-400 p-8">
-      <i class="fa-solid fa-exclamation-triangle text-4xl mb-4 text-red-500"></i>
-      <p class="text-center font-medium">Unable to load videos</p>
-      <p class="text-sm mt-2 text-gray-500">${message}</p>
-      <button onclick="location.reload()" class="mt-4 bg-red-600 hover:bg-red-700 px-6 py-2 rounded-lg transition-colors">
+    <div class="flex flex-col items-center justify-center h-full text-[var(--text-muted)] p-8">
+      <i class="fa-solid fa-triangle-exclamation text-4xl mb-4 text-[var(--accent)]"></i>
+      <p class="text-center font-medium">Unable to connect</p>
+      <p class="text-sm mt-2 opacity-70">${message}</p>
+      <button onclick="location.reload()" class="mt-4 bg-[var(--accent)] hover:opacity-90 text-white px-6 py-2 rounded-lg transition-opacity">
         Retry
       </button>
     </div>
@@ -539,15 +544,12 @@ function loadVideoState(index) {
   state.isPlaying = false;
   updatePlayIcon();
   
-  // RESET OVERLAY TO LOADING STATE
-  els.startOverlay.classList.remove('ready'); // Shows Spinner, Hides Play Btn
+  // RESET OVERLAY
+  els.startOverlay.classList.remove('ready');
   els.startOverlay.style.display = 'flex';
   els.startOverlay.style.backgroundImage = `url('${video.thumbnail}')`;
   
-  // Highlight Playlist
   highlightPlaylistItem(index);
-  
-  // Prepare YouTube Player
   setupYouTubePlayer(video.id);
 }
 
@@ -557,17 +559,14 @@ function setupYouTubePlayer(videoId) {
     return;
   }
 
-  if (state.ytPlayer) {
-    state.ytPlayer.destroy();
-  }
+  if (state.ytPlayer) state.ytPlayer.destroy();
 
-  let ytDiv = document.getElementById('yt-api-div');
-  if(!ytDiv) {
-    ytDiv = document.createElement('div');
-    ytDiv.id = 'yt-api-div';
-    ytDiv.className = 'absolute inset-0 z-10 w-full h-full'; 
-    els.wrapper.appendChild(ytDiv);
-  }
+  let oldDiv = document.getElementById('yt-api-div');
+  if(oldDiv) oldDiv.remove();
+  
+  let ytDiv = document.createElement('div');
+  ytDiv.id = 'yt-api-div';
+  els.wrapper.appendChild(ytDiv);
 
   state.ytPlayer = new YT.Player('yt-api-div', {
     height: '100%',
@@ -575,12 +574,11 @@ function setupYouTubePlayer(videoId) {
     videoId: videoId,
     playerVars: {
       'autoplay': 0,
-      'controls': 0, // Hide native controls
+      'controls': 0,
       'rel': 0,
       'modestbranding': 1,
       'fs': 0,
-      'iv_load_policy': 3,
-      'origin': window.location.origin
+      'iv_load_policy': 3
     },
     events: {
       'onReady': onPlayerReady,
@@ -592,8 +590,7 @@ function setupYouTubePlayer(videoId) {
 function onPlayerReady(event) {
   state.duration = event.target.getDuration();
   els.durTime.textContent = formatTime(state.duration);
-  
-  // SWITCH OVERLAY TO "PLAY BUTTON" STATE
+  event.target.setVolume(100);
   state.isPlayerReady = true;
   els.startOverlay.classList.add('ready');
 }
@@ -601,47 +598,39 @@ function onPlayerReady(event) {
 function onPlayerStateChange(event) {
   if (event.data == YT.PlayerState.PLAYING) {
     state.isPlaying = true;
-    
-    // HIDE OVERLAY COMPLETELY WHEN PLAYING
     els.startOverlay.style.display = 'none';
-    
     els.wrapper.classList.remove('paused');
+    if(state.ytPlayer) state.ytPlayer.setVolume(100);
     startUpdateLoop();
   } else {
     state.isPlaying = false;
     els.wrapper.classList.add('paused');
     stopUpdateLoop();
-    
-    // If paused manually, we might want to show overlay again? 
-    // Usually modern players keep overlay hidden on pause unless you click out.
-    // But for this request, let's keep it clean.
   }
   updatePlayIcon();
 }
 
-// --- USER INTERACTION ---
+// --- INTERACTION ---
 
-// 1. Click Thumbnail Overlay -> Play
 els.startOverlay.addEventListener('click', () => {
-  if(state.isPlayerReady && state.ytPlayer && typeof state.ytPlayer.playVideo === 'function') {
+  if(state.isPlayerReady && state.ytPlayer) {
     state.ytPlayer.playVideo();
+    state.ytPlayer.setVolume(100);
   }
 });
 
-// 2. Custom Play/Pause Button
 els.btnPlay.addEventListener('click', togglePlay);
 
 function togglePlay() {
   if(!state.ytPlayer) return;
-  
   if(state.isPlaying) {
     state.ytPlayer.pauseVideo();
   } else {
-    // If overlay is visible, trigger it
     if(els.startOverlay.style.display !== 'none') {
        els.startOverlay.click();
     } else {
        state.ytPlayer.playVideo();
+       state.ytPlayer.setVolume(100);
     }
   }
 }
@@ -656,7 +645,8 @@ function updatePlayIcon() {
   }
 }
 
-// 3. Progress Bar Logic
+// --- PROGRESS & TIME ---
+
 function startUpdateLoop() {
   state.updateInterval = setInterval(() => {
     if(!state.ytPlayer || !state.isPlaying) return;
@@ -677,31 +667,26 @@ function stopUpdateLoop() {
   clearInterval(state.updateInterval);
 }
 
-// 4. Scrubbing
+// Scrubbing
 let isDragging = false;
 
-els.progressBar.addEventListener('mousedown', (e) => {
-  isDragging = true;
-  seek(e);
-});
+els.progressBar.addEventListener('mousedown', (e) => { isDragging = true; seek(e); });
+els.progressBar.addEventListener('touchstart', (e) => { isDragging = true; seek(e.touches[0]); }, {passive: false});
 
-document.addEventListener('mousemove', (e) => {
-  if(isDragging) seek(e);
-  handlePreviewHover(e);
-});
+document.addEventListener('mousemove', (e) => { if(isDragging) seek(e); handlePreviewHover(e); });
+document.addEventListener('touchmove', (e) => { if(isDragging) seek(e.touches[0]); }, {passive: false});
 
-document.addEventListener('mouseup', () => {
-  if(isDragging) {
-    isDragging = false;
-    els.previewBox.style.display = 'none';
-  }
-});
+document.addEventListener('mouseup', () => { isDragging = false; els.previewBox.style.display = 'none'; });
+document.addEventListener('touchend', () => { isDragging = false; els.previewBox.style.display = 'none'; });
 
 function seek(e) {
   if(!state.ytPlayer || state.duration <= 0) return;
   
   const rect = els.progressBar.getBoundingClientRect();
-  let pos = (e.clientX - rect.left) / rect.width;
+  let clientX = e.clientX;
+  // Basic touch support fallback if needed, though touch event passes modified obj
+  
+  let pos = (clientX - rect.left) / rect.width;
   pos = Math.max(0, Math.min(1, pos));
   
   const seekTime = pos * state.duration;
@@ -713,12 +698,12 @@ function seek(e) {
   state.ytPlayer.seekTo(seekTime, true);
 }
 
-// 5. Timeline Preview
+// Preview Hover
 function handlePreviewHover(e) {
-  if(!state.currentVideoId) return;
+  if(!state.currentVideoId || window.innerWidth < 768) return; // Disable on mobile
   
   const rect = els.progressBar.getBoundingClientRect();
-  if (e.clientY >= rect.top && e.clientY <= rect.bottom) {
+  if (e.clientY >= rect.top - 20 && e.clientY <= rect.bottom + 20) {
     let pos = (e.clientX - rect.left) / rect.width;
     pos = Math.max(0, Math.min(1, pos));
     
@@ -733,28 +718,21 @@ function handlePreviewHover(e) {
   }
 }
 
-// 6. Volume
-els.volSlider.addEventListener('input', (e) => {
-  if(state.ytPlayer) state.ytPlayer.setVolume(e.target.value * 100);
-});
-
-// 7. Fullscreen
+// Fullscreen
 els.btnFull.addEventListener('click', () => {
   if (!document.fullscreenElement) {
-    els.wrapper.requestFullscreen().catch(err => {
-      console.error(err);
-    });
+    els.wrapper.requestFullscreen().catch(err => console.error(err));
   } else {
     document.exitFullscreen();
   }
 });
 
-// --- SHARE MODAL FUNCTIONS ---
+// --- SHARE MODAL ---
 function openShareModal() {
   const url = window.location.href;
   els.shareUrlInput.value = url;
-  
   els.shareModal.classList.remove('hidden');
+  // Small delay for animation
   setTimeout(() => {
     els.shareModal.classList.remove('opacity-0');
     els.shareModalContent.classList.remove('scale-95');
@@ -766,60 +744,56 @@ function closeShareModal() {
   els.shareModal.classList.add('opacity-0');
   els.shareModalContent.classList.remove('scale-100');
   els.shareModalContent.classList.add('scale-95');
-  
-  setTimeout(() => {
-    els.shareModal.classList.add('hidden');
-  }, 300);
+  setTimeout(() => els.shareModal.classList.add('hidden'), 300);
 }
 
 function copyShareLink() {
   els.shareUrlInput.select();
-  els.shareUrlInput.setSelectionRange(0, 99999); // Mobile
   navigator.clipboard.writeText(els.shareUrlInput.value).then(() => {
-    const btn = document.querySelector('#share-modal button.bg-red-600');
-    const originalText = btn.innerText;
-    btn.innerText = "Copied!";
-    btn.classList.add('bg-green-600', 'hover:bg-green-700');
-    btn.classList.remove('bg-red-600', 'hover:bg-red-700');
-    
-    setTimeout(() => {
-      btn.innerText = originalText;
-      btn.classList.remove('bg-green-600', 'hover:bg-green-700');
-      btn.classList.add('bg-red-600', 'hover:bg-red-700');
-    }, 2000);
+    const btn = document.querySelector('#share-modal button.bg-\\[var\\(--accent\\)\\]');
+    const originalHTML = btn.innerHTML;
+    btn.innerHTML = '<i class="fa-solid fa-check"></i> Copied';
+    setTimeout(() => btn.innerHTML = originalHTML, 2000);
   });
 }
 
-// Close modal on outside click
-els.shareModal.addEventListener('click', (e) => {
-  if (e.target === els.shareModal) closeShareModal();
-});
+els.shareModal.addEventListener('click', (e) => { if (e.target === els.shareModal) closeShareModal(); });
 
 // --- HELPERS ---
 
-function playNext() {
-  if(state.filtered.length === 0) return;
-  let nextIndex = state.currentIndex + 1;
-  if(nextIndex >= state.filtered.length) nextIndex = 0;
-  loadVideoState(nextIndex);
+// Format Time: H:MM:SS or M:SS
+function formatTime(seconds) {
+  if(!seconds || isNaN(seconds)) return "0:00";
+  
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = Math.floor(seconds % 60);
+  
+  const sStr = s < 10 ? '0' + s : s;
+  const mStr = m < 10 ? '0' + m : m;
+
+  if (h > 0) {
+    return `${h}:${mStr}:${sStr}`;
+  }
+  return `${m}:${sStr}`;
 }
 
 function renderPlaylist() {
   els.playlist.innerHTML = '';
   state.filtered.forEach((vid, idx) => {
     const div = document.createElement('div');
-    div.className = "flex gap-3 p-2 hover:bg-gray-800 rounded-lg cursor-pointer transition-colors group";
+    div.className = "flex gap-3 p-2 hover:bg-[var(--glass-border)] rounded-lg cursor-pointer transition-colors group border border-transparent hover:border-[var(--glass-border)]";
     div.dataset.index = idx;
     div.onclick = () => loadVideoState(idx);
     
     div.innerHTML = `
-      <div class="relative w-32 h-20 flex-shrink-0 bg-gray-900 rounded-md overflow-hidden">
+      <div class="relative w-32 h-20 flex-shrink-0 bg-gray-900 rounded-md overflow-hidden ring-1 ring-[var(--glass-border)]">
         <img src="${vid.thumbnail}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
-        <span class="absolute bottom-1 right-1 bg-black/80 text-[10px] px-1 rounded text-white">${vid.duration || '0:00'}</span>
+        <span class="absolute bottom-1 right-1 bg-black/80 text-[10px] px-1 rounded text-white font-mono">${vid.duration || '0:00'}</span>
       </div>
-      <div class="flex flex-col justify-center">
-        <h4 class="text-sm font-semibold text-gray-200 line-clamp-2 leading-snug group-hover:text-white transition-colors">${vid.title}</h4>
-        <p class="text-xs text-gray-500 mt-1">Video ${idx + 1}</p>
+      <div class="flex flex-col justify-center min-w-0">
+        <h4 class="text-sm font-semibold text-[var(--text-main)] line-clamp-2 leading-snug group-hover:text-[var(--accent)] transition-colors">${vid.title}</h4>
+        <!-- No numbering as requested -->
       </div>
     `;
     els.playlist.appendChild(div);
@@ -830,19 +804,12 @@ function renderPlaylist() {
 function highlightPlaylistItem(index) {
   const items = els.playlist.children;
   for(let item of items) {
-    item.classList.remove('bg-gray-800', 'ring-1', 'ring-red-500');
+    item.classList.remove('bg-[var(--glass-border)]', 'ring-1', 'ring-[var(--accent)]');
     if(parseInt(item.dataset.index) === index) {
-      item.classList.add('bg-gray-800', 'ring-1', 'ring-red-500');
+      item.classList.add('bg-[var(--glass-border)]', 'ring-1', 'ring-[var(--accent)]');
       item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
   }
-}
-
-function formatTime(seconds) {
-  if(!seconds || isNaN(seconds)) return "0:00";
-  const m = Math.floor(seconds / 60);
-  const s = Math.floor(seconds % 60);
-  return `${m}:${s < 10 ? '0' : ''}${s}`;
 }
 
 function loadYouTubeAPI(callback) {
@@ -853,14 +820,17 @@ function loadYouTubeAPI(callback) {
   tag.onload = callback;
 }
 
-// Search Filter
-document.getElementById('search').addEventListener('input', (e) => {
+// Search Filter Logic (Desktop & Mobile)
+const handleSearch = (e) => {
   const term = e.target.value.toLowerCase();
   state.filtered = state.videos.filter(v => v.title.toLowerCase().includes(term));
   renderPlaylist();
-});
+};
 
-// Start
+document.getElementById('search').addEventListener('input', handleSearch);
+document.getElementById('search-mobile').addEventListener('input', handleSearch);
+
+// Start App
 init();
 
 </script>
