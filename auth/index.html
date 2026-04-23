@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Secure Login | Unscplay</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link rel="stylesheet" href="/assets/css/auth.css">
+<link rel="icon" type="image/png" href="/assets/img/logo.webp">
+</head>
+
+<body class="flex justify-center items-center min-h-screen p-4">
+
+<div class="auth-card w-full max-w-[420px] rounded-2xl p-8 sm:p-10 relative overflow-hidden">
+  
+  <!-- Header -->
+  <div class="text-center mb-8">
+    <h2 id="title" class="text-3xl font-bold tracking-tight text-[var(--text-main)]">Welcome Back</h2>
+    <p class="text-[var(--text-muted)] text-sm mt-2">Enter your credentials to access your account.</p>
+  </div>
+
+  <!-- Name Field (Register Only) -->
+  <div id="nameField" class="hidden transition-all duration-300">
+    <label class="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-2">Full Name</label>
+    <div class="relative">
+        <i class="fa-regular fa-user absolute left-4 top-3.5 text-[var(--text-muted)]"></i>
+        <input type="text" id="name" class="input-field w-full rounded-lg pl-10 pr-4 py-3 focus:outline-none transition-all" placeholder="John Doe" autocomplete="name" />
+    </div>
+  </div>
+
+  <!-- Email Field -->
+  <div class="mt-5">
+    <label class="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-2">Email Address</label>
+    <div class="relative">
+        <i class="fa-regular fa-envelope absolute left-4 top-3.5 text-[var(--text-muted)]"></i>
+        <input type="email" id="email" class="input-field w-full rounded-lg pl-10 pr-4 py-3 focus:outline-none transition-all" placeholder="name@company.com" autocomplete="email" />
+    </div>
+  </div>
+
+  <!-- Password Field -->
+  <div class="mt-5">
+    <label class="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-2">Password</label>
+    <div class="relative">
+        <i class="fa-solid fa-lock absolute left-4 top-3.5 text-[var(--text-muted)]"></i>
+        <input type="password" id="password" class="input-field w-full rounded-lg pl-10 pr-12 py-3 focus:outline-none transition-all" placeholder="••••••••" autocomplete="current-password" />
+        <button onclick="togglePassword()" class="absolute right-4 top-3.5 text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors">
+            <i id="eyeIcon" class="fa-regular fa-eye"></i>
+        </button>
+    </div>
+  </div>
+
+  <!-- Action Button -->
+  <button onclick="handleAuth()" id="submitBtn" class="w-full bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white font-semibold py-3.5 rounded-lg mt-8 transition-all transform active:scale-[0.98] shadow-lg shadow-blue-500/20">
+    Sign In
+  </button>
+
+  <!-- Toggle Mode -->
+  <div class="text-center mt-8 pt-6 border-t border-[var(--input-border)]">
+    <p class="text-[var(--text-muted)] text-sm">
+      <span id="toggleText">Don't have an account?</span>
+      <span onclick="toggleMode()" class="text-[var(--primary)] cursor-pointer hover:underline font-semibold ml-1 transition-colors">
+        Create Account
+      </span>
+    </p>
+  </div>
+
+</div>
+
+<!-- TOAST CONTAINER -->
+<div id="toast-container"></div>
+
+<script src="/assets/js/auth.js"></script>
+<script src="./assets/spa.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,81 @@
+
+  /* --- THEME VARIABLES (Matches Rest of App) --- */
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: rgba(240, 240, 240, 0.7);
+    --glass-border: rgba(0, 0, 0, 0.1);
+    --text-main: #0f0f0f;
+    --text-muted: #606060;
+    --accent: #ff0000; 
+    --card-bg: rgba(255, 255, 255, 0.5);
+    --input-bg: rgba(0, 0, 0, 0.05);
+  }
+
+  body.theme-ny-dark {
+    --bg-primary: #000000;
+    --bg-secondary: rgba(20, 20, 20, 0.6);
+    --glass-border: rgba(255, 255, 255, 0.15);
+    --text-main: #ffffff;
+    --text-muted: #aaaaaa;
+    --accent: #ff0000;
+    --card-bg: rgba(30, 30, 30, 0.6);
+    --input-bg: rgba(0, 0, 0, 0.3);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    body:not(.theme-ny-dark):not(.theme-white) {
+        --bg-primary: #0f0f0f;
+        --bg-secondary: rgba(39, 39, 39, 0.6);
+        --glass-border: rgba(255, 255, 255, 0.1);
+        --text-main: #ffffff;
+        --text-muted: #aaaaaa;
+        --accent: #ff0000;
+        --card-bg: rgba(30, 30, 30, 0.6);
+        --input-bg: rgba(0, 0, 0, 0.3);
+    }
+  }
+
+  body { 
+    background-color: var(--bg-primary); 
+    color: var(--text-main); 
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  /* GLASS UTILS */
+  .glass-panel {
+    background: var(--bg-secondary);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--glass-border);
+  }
+  
+  .glass-card {
+    background: var(--card-bg);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--glass-border);
+  }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: var(--bg-primary); }
+  ::-webkit-scrollbar-thumb { background: var(--text-muted); border-radius: 4px; opacity: 0.5; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+  /* TOAST NOTIFICATION */
+  #toast-container {
+    position: fixed; bottom: 20px; right: 20px; z-index: 100;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .toast {
+    background: var(--bg-secondary);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+    color: var(--text-main);
+    padding: 12px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    display: flex; align-items: center; gap: 10px;
+    animation: slideIn 0.3s ease-out forwards;
+    min-width: 250px;
+  }
+  @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }

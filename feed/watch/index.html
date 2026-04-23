@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+<!-- 🔐 Security (GTM + YouTube allowed) -->
+<meta http-equiv="Content-Security-Policy"
+content="
+default-src 'self' https:;
+script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdnjs.cloudflare.com https://www.youtube.com https://www.googletagmanager.com;
+style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com;
+img-src 'self' data: https: i.ytimg.com;
+font-src 'self' https://cdnjs.cloudflare.com;
+connect-src 'self' https://yt-player-pbmv.onrender.com https://www.youtube.com https://www.googletagmanager.com;
+frame-src https://www.youtube.com https://www.youtube-nocookie.com;
+">
+
+<!-- 🔍 SEO -->
+<title id="page-title">UnscPlay — Watch</title>
+<meta name="description" content="Watch live streams on UnscPlay">
+<meta name="keywords" content="live streaming, UnscPlay, watch video, stream">
+<meta name="author" content="UnscPlay">
+<meta name="robots" content="index, follow">
+
+<!-- 🔗 Canonical -->
+<link rel="canonical" href="https://yourdomain.com/watch">
+
+<!-- 🌐 Open Graph -->
+<meta property="og:title" content="UnscPlay — Watch">
+<meta property="og:description" content="Watch live streams instantly">
+<meta property="og:image" content="/assets/img/logo.webp">
+<meta property="og:type" content="video.other">
+
+<!-- 🐦 Twitter -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="UnscPlay">
+<meta name="twitter:description" content="Watch live streaming">
+<meta name="twitter:image" content="/assets/img/logo.webp">
+
+<!-- 🎨 Favicon -->
+<link rel="icon" type="image/png" href="/assets/img/logo.webp">
+
+<!-- 🎨 Styles -->
+<link rel="stylesheet" href="/assets/css/watch.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<!-- ⚡ Tailwind -->
+<script src="https://cdn.tailwindcss.com"></script>
+
+<!-- 📊 Google Tag Manager -->
+<script>
+(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id=GTM-XXXXXXX'+dl;
+f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-XXXXXXX');
+</script>
+
+<!-- ⚡ SIMPLE DYNAMIC SEO -->
+<script>
+function updateSEO(stream){
+  document.title = (stream.isLive ? "🔴 Live: " : "") + stream.title + " | UnscPlay";
+
+  const setMeta = (key, value, attr="name") => {
+    let tag = document.querySelector(`meta[${attr}="${key}"]`);
+    if(tag) tag.setAttribute("content", value);
+  };
+
+  setMeta("description", stream.description);
+  setMeta("og:title", stream.title, "property");
+  setMeta("og:description", stream.description, "property");
+  setMeta("og:image", stream.thumbnail, "property");
+  setMeta("twitter:title", stream.title);
+  setMeta("twitter:description", stream.description);
+  setMeta("twitter:image", stream.thumbnail);
+
+  // 🔗 dynamic canonical
+  let link = document.querySelector("link[rel='canonical']");
+  if(link) link.href = window.location.href;
+}
+</script>
+
+</head>
+<body class="antialiased min-h-screen flex flex-col">
+
+<!-- 🔐 SECURITY: Critical Console Warning -->
+<script>
+(function(){const c=(col,sz='14px')=>`color:${col};font-size:${sz};font-weight:bold;text-shadow:1px 1px 2px #000;`;console.log(`%c🔒 UNSCPLAY WATCH - CRITICAL SECURITY LEVEL`,c('#ff0000','22px'));console.log(`%c⚠️  RESTRICTED: Do not paste unknown code.\n⚠️  Active: XSS sanitization, rate limiting, DevTools monitor, CSP enforcement.\n🛡️  Session integrity protected.`,c('#ffaa00'));})();
+</script>
+
+<!-- HEADER -->
+<header class="sticky top-0 z-50 glass-panel px-3 sm:px-4 py-3 flex items-center justify-between gap-3">
+  <div class="flex items-center gap-2 cursor-pointer flex-shrink-0" onclick="window.location.href='/index.html'">
+     <a href="/" class="flex items-center">
+  <img src="/assets/img/hlogo.webp" alt="Unscpaly.com Logo" class="h-8 sm:h-10">
+  <span class="sr-only">Unscpaly.com</span>
+</a>
+  </div>
+  
+  <!-- Desktop Search -->
+  <div class="flex-1 max-w-md mx-2 hidden sm:block">
+    <div class="relative">
+      <input id="searchDesktop" type="text" autocomplete="off" class="w-full bg-[var(--bg-secondary)] border border-[var(--glass-border)] text-sm rounded-full px-4 py-2 focus:outline-none focus:border-[var(--accent)] pl-10 text-[var(--text-main)] placeholder-[var(--text-muted)]" placeholder="Search videos...">
+      <i class="fa-solid fa-search absolute left-3 top-2.5 text-[var(--text-muted)]"></i>
+    </div>
+  </div>
+  
+  <!-- Right Actions -->
+  <div class="flex items-center gap-2">
+    <button id="searchTrigger" class="w-9 h-9 sm:hidden rounded-full flex items-center justify-center hover:bg-[var(--glass-border)] text-[var(--text-main)]" aria-label="Search"><i class="fa-solid fa-search"></i></button>
+    <!-- <button onclick="window.location.href='/'" class="w-9 h-9 rounded-full flex items-center justify-center hover:bg-[var(--glass-border)] text-[var(--text-main)]" aria-label="Home"><i class="fa-solid fa-house"></i></button> -->
+  </div>
+</header>
+
+<!-- Mobile Search Popup -->
+<div id="searchPopup" class="search-popup fixed top-0 left-0 right-0 z-50 glass-panel px-4 py-3 flex items-center gap-3 sm:hidden">
+  <button id="searchClose" class="w-9 h-9 rounded-full hover:bg-[var(--glass-border)] text-[var(--text-main)]"><i class="fa-solid fa-arrow-left"></i></button>
+  <div class="flex-1 relative">
+    <input id="searchInput" type="text" autocomplete="off" class="w-full bg-[var(--bg-secondary)] border border-[var(--glass-border)] rounded-full px-4 py-2 pl-10 focus:outline-none focus:border-[var(--accent)] placeholder-[var(--text-muted)] text-[var(--text-main)]" placeholder="Search videos...">
+    <i class="fa-solid fa-search absolute left-3 top-3 text-[var(--text-muted)]"></i>
+  </div>
+  <button id="searchSubmit" class="px-4 py-2 bg-[var(--accent)] hover:opacity-90 text-white rounded-full text-sm font-medium">Search</button>
+</div>
+
+<!-- MAIN CONTENT -->
+<main class="flex-1 max-w-[1600px] mx-auto p-3 sm:p-4 lg:p-6 grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6 w-full">
+  
+  <!-- LEFT: Player + Title (NO BOX/GRID - Clean Feed) -->
+  <div class="lg:col-span-2 space-y-3 lg:space-y-4">
+    
+    <!-- PLAYER -->
+    <div id="player-wrapper" class="player-container paused relative w-full aspect-video bg-black rounded-xl overflow-hidden ring-1 ring-[var(--glass-border)]">
+      <div id="start-overlay" class="start-overlay" style="background-image:url('');">
+        <div class="center-btn-container">
+          <div class="loader-spinner"></div>
+          <div class="big-play-btn"><i class="fa-solid fa-play text-white text-xl ml-1"></i></div>
+        </div>
+      </div>
+      <div id="yt-api-div"></div>
+      <div class="custom-controls">
+        <div class="relative w-full"><div class="progress-container" id="progress-bar"><div class="progress-played" id="played-bar"></div><div class="scrubber-handle" id="scrubber"></div></div></div>
+        <div class="flex items-center justify-between mt-2">
+          <div class="flex items-center gap-4">
+            <button id="btn-play" class="hover:text-[var(--accent)] transition-colors text-white focus:outline-none"><i id="icon-play" class="fa-solid fa-play text-xl"></i><i id="icon-pause" class="fa-solid fa-pause text-xl hidden"></i></button>
+            <div class="text-xs font-medium text-gray-200 font-mono"><span id="current-time">0:00</span> / <span id="duration">0:00</span></div>
+          </div>
+          <button id="btn-fullscreen" class="hover:text-white text-gray-300 focus:outline-none p-2"><i class="fa-solid fa-expand text-lg"></i></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIDEO TITLE - Clean, No Box/Grid -->
+    <h1 id="video-title" class="text-lg sm:text-xl lg:text-2xl font-bold leading-tight text-[var(--text-main)] px-1">Loading...</h1>
+
+    <!-- Share Button -->
+    <div class="px-1">
+      <button onclick="openShareModal()" class="flex items-center gap-2 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white px-5 py-2 rounded-full transition-all font-medium text-sm">
+        <i class="fa-solid fa-share-nodes"></i> Share
+      </button>
+    </div>
+  </div>
+
+  <!-- RIGHT: Playlist Sidebar -->
+  <div class="lg:col-span-1">
+    <div class="glass-panel rounded-xl h-[calc(100vh-110px)] lg:h-[calc(100vh-140px)] flex flex-col sticky top-20 overflow-hidden">
+      <div class="px-3 py-2 border-b border-[var(--glass-border)] flex items-center justify-between">
+        <span class="text-sm font-semibold text-[var(--text-muted)]">Up Next</span>
+        <span id="playlistCount" class="text-xs text-[var(--text-muted)]">0 videos</span>
+      </div>
+      <div id="playlist" class="flex-1 overflow-y-auto p-2 space-y-1 custom-scrollbar"></div>
+    </div>
+  </div>
+</main>
+
+<!-- SHARE MODAL -->
+<div id="share-modal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300 p-4">
+  <div class="glass-panel p-6 rounded-2xl shadow-2xl w-full max-w-md transform scale-95 transition-transform duration-300 border border-[var(--glass-border)]" id="share-modal-content">
+    <div class="flex justify-between items-center mb-6">
+      <h3 class="text-lg font-bold text-[var(--text-main)]">Share Video</h3>
+      <button onclick="closeShareModal()" class="text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors w-8 h-8 flex items-center justify-center rounded-full hover:bg-[var(--glass-border)]"><i class="fa-solid fa-xmark text-xl"></i></button>
+    </div>
+    <div class="mb-6">
+      <div class="flex gap-2">
+        <input type="text" id="share-url" readonly class="w-full bg-[var(--bg-primary)] border border-[var(--glass-border)] rounded-lg px-4 py-3 text-sm text-[var(--text-main)] focus:outline-none focus:border-[var(--accent)] font-mono">
+        <button onclick="copyShareLink()" class="bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors whitespace-nowrap">Copy</button>
+      </div>
+    </div>
+    <div class="flex justify-end"><button onclick="closeShareModal()" class="text-sm text-[var(--text-muted)] hover:text-[var(--text-main)] font-medium">Close</button></div>
+  </div>
+</div>
+
+<script src="/assets/js/watch.js"></script>
+</body>
+</html>

@@ -3,157 +3,136 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Unscplay</title>
-<script src="https://cdn.tailwindcss.com"></script>
+
+<!-- 🔐 Security (GTM added) -->
+<meta http-equiv="Content-Security-Policy"
+content="
+default-src 'self' https:;
+script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdnjs.cloudflare.com https://www.googletagmanager.com;
+style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com;
+img-src 'self' data: https:;
+font-src 'self' https://cdnjs.cloudflare.com;
+connect-src 'self' https://yt-player-pbmv.onrender.com https://www.googletagmanager.com;
+">
+
+<!-- 🔍 SEO -->
+<title id="page-title">UnscPlay</title>
+<meta name="description" content="Watch live streams on UnscPlay">
+<meta name="keywords" content="live streaming, UnscPlay, video, stream">
+<meta name="author" content="UnscPlay">
+
+<!-- 🌐 Open Graph -->
+<meta property="og:title" content="UnscPlay">
+<meta property="og:description" content="Watch live streams instantly">
+<meta property="og:image" content="./assets/img/logo.webp">
+<meta property="og:type" content="website">
+
+<!-- 🐦 Twitter -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="UnscPlay">
+<meta name="twitter:description" content="Live streaming platform">
+<meta name="twitter:image" content="./assets/img/logo.webp">
+
+<!-- 🎨 Favicon -->
+<link rel="icon" type="image/png" href="./assets/img/logo.webp">
+
+<!-- 🎨 Styles -->
+<link rel="stylesheet" href="./assets/css/feed.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-<style>
-  /* --- THEME VARIABLES (Matches Player) --- */
-  :root {
-    --bg-primary: #ffffff;
-    --bg-secondary: rgba(240, 240, 240, 0.7);
-    --glass-border: rgba(0, 0, 0, 0.1);
-    --text-main: #0f0f0f;
-    --text-muted: #606060;
-    --accent: #ff0000; 
-    --card-hover: rgba(0, 0, 0, 0.05);
-  }
 
-  /* NEW YORK DARK MODE */
-  body.theme-ny-dark {
-    --bg-primary: #000000;
-    --bg-secondary: rgba(20, 20, 20, 0.6);
-    --glass-border: rgba(255, 255, 255, 0.15);
-    --text-main: #ffffff;
-    --text-muted: #aaaaaa;
-    --accent: #ff0000;
-    --card-hover: rgba(255, 255, 255, 0.1);
-  }
+<!-- ⚡ Tailwind -->
+<script src="https://cdn.tailwindcss.com"></script>
 
-  /* SYSTEM DEFAULT */
-  @media (prefers-color-scheme: dark) {
-    body:not(.theme-ny-dark):not(.theme-white) {
-        --bg-primary: #0f0f0f;
-        --bg-secondary: rgba(39, 39, 39, 0.6);
-        --glass-border: rgba(255, 255, 255, 0.1);
-        --text-main: #ffffff;
-        --text-muted: #aaaaaa;
-        --accent: #ff0000;
-        --card-hover: rgba(255, 255, 255, 0.1);
-    }
-  }
+<!-- 📊 Google Tag Manager -->
+<script>
+(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id=GTM-XXXXXXX'+dl;
+f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-XXXXXXX');
+</script>
 
-  body { 
-    background-color: var(--bg-primary); 
-    color: var(--text-main); 
-    transition: background-color 0.3s ease, color 0.3s ease;
-  }
+<!-- ⚡ SIMPLE DYNAMIC SEO -->
+<script>
+function updateSEO(stream){
+  document.title = stream.title + " | UnscPlay";
 
-  /* GLASS UTILS */
-  .glass-panel {
-    background: var(--bg-secondary);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-bottom: 1px solid var(--glass-border);
-  }
-  
-  .glass-card {
-    background: transparent;
-    transition: transform 0.2s, background 0.2s;
-  }
-  .glass-card:hover {
-    background: var(--card-hover);
-  }
+  const setMeta = (key, value, attr="name") => {
+    let tag = document.querySelector(`meta[${attr}="${key}"]`);
+    if(tag) tag.setAttribute("content", value);
+  };
 
-  /* SKELETON ANIMATION */
-  @keyframes shimmer {
-    0% { background-position: -200% 0; }
-    100% { background-position: 200% 0; }
-  }
-  .skeleton {
-    background: linear-gradient(90deg, var(--bg-secondary) 25%, var(--glass-border) 50%, var(--bg-secondary) 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-  }
+  setMeta("description", stream.description);
+  setMeta("og:title", stream.title, "property");
+  setMeta("og:description", stream.description, "property");
+  setMeta("og:image", stream.thumbnail, "property");
+  setMeta("twitter:title", stream.title);
+  setMeta("twitter:description", stream.description);
+  setMeta("twitter:image", stream.thumbnail);
+}
+</script>
 
-  /* SCROLLBAR */
-  ::-webkit-scrollbar { width: 8px; }
-  ::-webkit-scrollbar-track { background: var(--bg-primary); }
-  ::-webkit-scrollbar-thumb { background: var(--text-muted); border-radius: 4px; opacity: 0.5; }
-</style>
-<link rel="icon" type="image/png" href="img/logo.png">
 </head>
 <body class="font-sans antialiased min-h-screen flex flex-col">
 
+<!-- 🔐 SECURITY: Console Warning -->
+<script>
+(function(){const c=(col,sz='14px')=>`color:${col};font-size:${sz};font-weight:bold;text-shadow:1px 1px 2px #000;`;console.log(`%c🔒 UNSCPLAY - CRITICAL SECURITY LEVEL`,c('#ff0000','22px'));console.log(`%c⚠️  WARNING: This is a restricted environment.\n⚠️  Pasting malicious code can compromise your account.\n🛡️  Active protections: XSS sanitization, rate limiting, DevTools monitoring.`,c('#ffaa00'));})();
+</script>
+
 <!-- HEADER -->
-<header class="sticky top-0 z-40 glass-panel px-4 py-3 flex justify-between items-center transition-colors duration-300">
-  <!-- LOGO -->
-  <div class="flex items-center gap-2 cursor-pointer group" onclick="window.location.href='index.html'">
-    <span class="font-bold text-xl tracking-tight hidden sm:block text-[var(--text-main)]">Unsc<span style="color:var(--accent)">play</span></span>
+<header class="sticky top-0 z-40 glass-panel px-3 sm:px-4 py-3 flex justify-between items-center">
+  <div class="flex items-center gap-2 cursor-pointer" onclick="window.location.href='index.html'">
+   <a href="/" class="flex items-center">
+  <img src="./assets/img/hlogo.webp" alt="Unscpaly.com Logo" class="h-8 sm:h-10">
+  <span class="sr-only">Unscpaly.com</span>
+</a>
   </div>
-
-  <!-- SEARCH -->
-  <div class="flex-1 max-w-xl mx-4">
-    <div class="relative group">
-      <input id="search" type="text"
-        class="w-full bg-[var(--bg-secondary)] border border-[var(--glass-border)] rounded-full px-4 py-2 pl-10 focus:outline-none focus:border-[var(--accent)] transition-colors placeholder-[var(--text-muted)] text-[var(--text-main)]"
-        placeholder="Search videos...">
-      <i class="fa-solid fa-search absolute left-3 top-3 text-[var(--text-muted)]"></i>
+  <!-- Desktop Search -->
+  <div class="flex-1 max-w-md mx-2 sm:mx-4 hidden sm:block">
+    <div class="relative">
+      <input id="searchDesktop" type="text" autocomplete="off" class="w-full bg-[var(--bg-secondary)] border border-[var(--glass-border)] rounded-full px-4 py-2 pl-10 focus:outline-none focus:border-[var(--accent)] placeholder-[var(--text-muted)] text-[var(--text-main)] text-sm" placeholder="Search videos...">
+      <i class="fa-solid fa-search absolute left-3 top-2.5 text-[var(--text-muted)]"></i>
     </div>
   </div>
-
-  <!-- RIGHT ACTIONS -->
-  <div class="flex items-center gap-3">
-    <!-- THEME SELECTOR -->
-    <div class="relative group">
-        <button class="w-9 h-9 rounded-full flex items-center justify-center hover:bg-[var(--card-hover)] text-[var(--text-main)] transition-colors">
-          <i class="fa-solid fa-palette"></i>
-        </button>
-        <div class="absolute right-0 mt-2 w-40 bg-[var(--bg-secondary)] backdrop-blur-xl border border-[var(--glass-border)] rounded-xl hidden group-hover:block p-2 shadow-xl z-50">
-            <button onclick="setTheme('system')" class="w-full text-left px-3 py-2 text-sm text-[var(--text-main)] hover:bg-[var(--card-hover)] rounded-lg flex items-center gap-2">
-                <i class="fa-solid fa-desktop"></i> System
-            </button>
-            <button onclick="setTheme('ny-dark')" class="w-full text-left px-3 py-2 text-sm text-[var(--text-main)] hover:bg-[var(--card-hover)] rounded-lg flex items-center gap-2">
-                <i class="fa-solid fa-moon"></i> NY Dark
-            </button>
-            <button onclick="setTheme('white')" class="w-full text-left px-3 py-2 text-sm text-[var(--text-main)] hover:bg-[var(--card-hover)] rounded-lg flex items-center gap-2">
-                <i class="fa-solid fa-sun"></i> White
-            </button>
-        </div>
-    </div>
-
-    <!-- USER PROFILE -->
-    <div id="userBox" class="flex items-center gap-2 cursor-pointer hover:bg-[var(--card-hover)] p-1 pr-3 rounded-full transition-colors border border-transparent hover:border-[var(--glass-border)]">
-      <div id="avatar" class="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center text-sm font-bold text-white shadow-md">G</div>
-      <span id="username" class="text-sm font-medium hidden sm:block text-[var(--text-main)]">Guest</span>
+  <!-- Right Actions -->
+  <div class="flex items-center gap-2 sm:gap-3">
+    <button id="searchTrigger" class="w-9 h-9 sm:hidden rounded-full flex items-center justify-center hover:bg-[var(--card-hover)] text-[var(--text-main)]" aria-label="Search"><i class="fa-solid fa-search text-base"></i></button>
+    <div id="userBox" class="flex items-center gap-2 cursor-pointer hover:bg-[var(--card-hover)] p-1 pr-2 sm:pr-3 rounded-full border border-transparent hover:border-[var(--glass-border)]">
+      <div id="avatar" class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gray-600 flex items-center justify-center text-xs sm:text-sm font-bold text-white">G</div>
+      <span id="username" class="text-xs sm:text-sm font-medium hidden sm:block text-[var(--text-main)]">Guest</span>
     </div>
   </div>
 </header>
 
-<!-- MAIN GRID -->
-<main class="p-4 sm:p-6 min-h-screen flex-1">
-  <div id="grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-4 gap-y-8">
-    <!-- Videos injected here -->
+<!-- Mobile Search Popup -->
+<div id="searchPopup" class="search-popup fixed top-0 left-0 right-0 z-50 glass-panel px-4 py-3 flex items-center gap-3 sm:hidden">
+  <button id="searchClose" class="w-9 h-9 rounded-full hover:bg-[var(--card-hover)] text-[var(--text-main)]"><i class="fa-solid fa-arrow-left"></i></button>
+  <div class="flex-1 relative">
+    <input id="searchInput" type="text" autocomplete="off" class="w-full bg-[var(--bg-secondary)] border border-[var(--glass-border)] rounded-full px-4 py-2 pl-10 focus:outline-none focus:border-[var(--accent)] placeholder-[var(--text-muted)] text-[var(--text-main)]" placeholder="Search videos...">
+    <i class="fa-solid fa-search absolute left-3 top-3 text-[var(--text-muted)]"></i>
   </div>
-  
-  <!-- Loading States -->
-  <div id="loader" class="hidden py-8 text-center">
-    <i class="fa-solid fa-circle-notch fa-spin text-2xl text-[var(--accent)]"></i>
-  </div>
-  
+  <button id="searchSubmit" class="px-4 py-2 bg-[var(--accent)] hover:opacity-90 text-white rounded-full text-sm font-medium">Search</button>
+</div>
+
+<!-- MAIN GRID: 1 mobile / 2 tablet / 3 PC -->
+<main class="p-3 sm:p-4 lg:p-6 min-h-screen flex-1">
+  <div id="grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-3 sm:gap-x-4 lg:gap-x-6 gap-y-5 sm:gap-y-6 lg:gap-y-8"></div>
+  <div id="loader" class="hidden py-8 text-center"><i class="fa-solid fa-circle-notch fa-spin text-2xl text-[var(--accent)]"></i></div>
   <div id="endMsg" class="hidden py-8 text-center text-[var(--text-muted)]">No more videos found</div>
   <div id="errorMsg" class="hidden py-8 text-center text-red-500">Failed to connect to backend.</div>
+  <div id="noSearchResults" class="hidden py-8 text-center text-[var(--text-muted)]">No matching videos found. Try different keywords.</div>
 </main>
 
 <!-- LOGIN MODAL -->
 <div id="loginPopup" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-  <div class="bg-[var(--bg-secondary)] backdrop-blur-xl border border-[var(--glass-border)] p-8 rounded-2xl w-full max-w-sm text-center shadow-2xl transform transition-all scale-100">
-    <div class="w-16 h-16 bg-[var(--accent)] rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-red-500/20">
-        <i class="fa-solid fa-lock text-white text-2xl"></i>
-    </div>
+  <div class="bg-[var(--bg-secondary)] backdrop-blur-xl border border-[var(--glass-border)] p-8 rounded-2xl w-full max-w-sm text-center shadow-2xl">
+    <div class="w-16 h-16 bg-[var(--accent)] rounded-full flex items-center justify-center mx-auto mb-4"><i class="fa-solid fa-lock text-white text-2xl"></i></div>
     <h2 class="text-2xl font-bold mb-2 text-[var(--text-main)]">Login Required</h2>
     <p class="text-[var(--text-muted)] mb-6 text-sm">Please sign in to access the library.</p>
-    <button onclick="goToAuth()" class="bg-[var(--accent)] hover:opacity-90 text-white font-bold px-4 py-3 rounded-full w-full mb-3 transition shadow-lg">Sign In</button>
-    <button onclick="closePopup('loginPopup')" class="text-[var(--text-muted)] text-sm hover:text-[var(--text-main)] transition">Maybe Later</button>
+    <button onclick="goToAuth()" class="bg-[var(--accent)] hover:opacity-90 text-white font-bold px-4 py-3 rounded-full w-full mb-3">Sign In</button>
+    <button onclick="closePopup('loginPopup')" class="text-[var(--text-muted)] text-sm hover:text-[var(--text-main)]">Maybe Later</button>
   </div>
 </div>
 
@@ -161,190 +140,13 @@
 <div id="profilePopup" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
   <div class="bg-[var(--bg-secondary)] backdrop-blur-xl border border-[var(--glass-border)] p-6 rounded-2xl w-80 text-center shadow-2xl relative">
     <button onclick="closePopup('profilePopup')" class="absolute top-4 right-4 text-[var(--text-muted)] hover:text-[var(--text-main)]"><i class="fa-solid fa-xmark text-lg"></i></button>
-    
-    <div id="profileAvatar" class="w-20 h-20 mx-auto rounded-full bg-blue-600 flex items-center justify-center text-3xl font-bold mb-3 shadow-lg border-4 border-[var(--bg-secondary)] text-white">U</div>
-    
+    <div id="profileAvatar" class="w-20 h-20 mx-auto rounded-full bg-blue-600 flex items-center justify-center text-3xl font-bold mb-3 text-white">U</div>
     <h2 id="profileName" class="font-bold text-xl text-[var(--text-main)]">User Name</h2>
     <p id="profileEmail" class="text-[var(--text-muted)] text-sm mb-6 break-all">email@example.com</p>
-    
-    <button onclick="logout()" class="w-full bg-[var(--card-hover)] hover:bg-red-500/10 hover:text-red-500 border border-[var(--glass-border)] text-[var(--text-main)] py-2 rounded-xl transition flex items-center justify-center gap-2">
-      <i class="fa-solid fa-right-from-bracket"></i> Logout
-    </button>
+    <button onclick="logout()" class="w-full bg-[var(--card-hover)] hover:bg-red-500/10 hover:text-red-500 border border-[var(--glass-border)] text-[var(--text-main)] py-2 rounded-xl flex items-center justify-center gap-2"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
   </div>
 </div>
 
-<script>
-const API_URL = "http://localhost:5000/api/videos"; 
-const AUTH_URL = "auth.html"; // Ensure this file exists or change to your login page
-
-// --- THEME LOGIC ---
-function setTheme(themeName) {
-  document.body.classList.remove('theme-ny-dark', 'theme-white');
-  if (themeName === 'ny-dark') {
-    document.body.classList.add('theme-ny-dark');
-    localStorage.setItem('theme', 'ny-dark');
-  } else if (themeName === 'white') {
-    document.body.classList.add('theme-white');
-    localStorage.setItem('theme', 'white');
-  } else {
-    localStorage.removeItem('theme');
-  }
-}
-
-// Init Theme
-(function initTheme() {
-  const savedTheme = localStorage.getItem('theme');
-  if (savedTheme) setTheme(savedTheme);
-})();
-
-// --- AUTH STATE ---
-let state = { page: 1, search: "", loading: false, hasMore: true, user: null, authTimer: null };
-
-function initAuth() {
-  const token = localStorage.getItem("token");
-  const storedUser = localStorage.getItem("user");
-  
-  // For Demo purposes, if no auth system is ready, we auto-login a guest to show API data
-  // Remove this 'if' block if you strictly want to enforce login
-  if (!token && !storedUser) {
-     // Uncomment below to enforce strict login
-     // state.authTimer = setTimeout(() => { if (!state.user) showPopup("loginPopup"); }, 1000);
-     
-     // For now, setting a dummy guest so you see the API works
-     state.user = { name: "Guest Viewer", email: "guest@streampro.com" };
-  }
-
-  if (token && storedUser) {
-    state.user = JSON.parse(storedUser);
-  } 
-  
-  if(state.user) updateUIUser(state.user);
-}
-
-function updateUIUser(user) {
-  const name = user.name || "User";
-  document.getElementById("username").innerText = name;
-  document.getElementById("avatar").innerText = name.charAt(0).toUpperCase();
-  document.getElementById("avatar").classList.replace("bg-gray-600", "bg-blue-600");
-  
-  document.getElementById("profileName").innerText = name;
-  document.getElementById("profileEmail").innerText = user.email || "";
-  document.getElementById("profileAvatar").innerText = name.charAt(0).toUpperCase();
-}
-
-function goToAuth() { window.location.href = AUTH_URL; }
-function logout() { localStorage.clear(); location.reload(); }
-
-document.getElementById("userBox").addEventListener("click", () => { 
-    if (state.user) showPopup("profilePopup"); 
-    else showPopup("loginPopup"); 
-});
-
-function showPopup(id) { document.getElementById(id).classList.remove("hidden"); }
-function closePopup(id) { document.getElementById(id).classList.add("hidden"); }
-
-// CLICK VIDEO -> GO TO WATCH PAGE
-function handleVideoClick(videoId) {
-  // Optional: Check auth here again
-  window.location.href = `watch.html?id=${videoId}`;
-}
-
-/* ================= VIDEO SYSTEM ================= */
-async function fetchVideos(reset = false) {
-  if (state.loading || !state.hasMore) return;
-  state.loading = true;
-  
-  if (reset) {
-    state.page = 1;
-    state.hasMore = true;
-    document.getElementById("grid").innerHTML = "";
-    document.getElementById("endMsg").classList.add("hidden");
-    document.getElementById("errorMsg").classList.add("hidden");
-    showSkeletons();
-  } else {
-    document.getElementById("loader").classList.remove("hidden");
-  }
-
-  try {
-    // Fetching from your API
-    const res = await fetch(`${API_URL}?page=${state.page}&limit=12&search=${encodeURIComponent(state.search)}`);
-    if (!res.ok) throw new Error("Backend Error");
-    
-    const data = await res.json();
-    
-    // Assuming API returns { videos: [...] } or just [...]
-    const videos = Array.isArray(data) ? data : (data.videos || []);
-
-    if (videos.length > 0) {
-      if(state.page === 1) removeSkeletons();
-      renderVideos(videos);
-      state.page++;
-    } else {
-      state.hasMore = false;
-      if(state.page === 1) removeSkeletons();
-      document.getElementById("endMsg").classList.remove("hidden");
-    }
-  } catch (err) {
-    console.error(err);
-    if(state.page === 1) { 
-        removeSkeletons(); 
-        document.getElementById("errorMsg").classList.remove("hidden"); 
-    }
-  } finally {
-    state.loading = false;
-    document.getElementById("loader").classList.add("hidden");
-  }
-}
-
-function renderVideos(videos) {
-  const grid = document.getElementById("grid");
-  videos.forEach(v => {
-    const card = document.createElement("div");
-    card.className = "group cursor-pointer flex flex-col gap-2 fade-in";
-    card.onclick = () => handleVideoClick(v.id);
-    
-    card.innerHTML = `
-      <div class="relative aspect-video rounded-xl overflow-hidden bg-[#1f1f1f] ring-1 ring-[var(--glass-border)]">
-        <img src="${v.thumbnail}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
-        <div class="absolute bottom-1 right-1 bg-black/80 backdrop-blur-sm text-white text-xs px-1.5 py-0.5 rounded font-medium border border-white/10">${v.duration || "0:00"}</div>
-      </div>
-      <div class="mt-1 px-1">
-        <h3 class="font-bold text-sm leading-tight line-clamp-2 text-[var(--text-main)] group-hover:text-[var(--accent)] transition-colors">${v.title}</h3>
-       
-      </div>
-    `;
-    grid.appendChild(card);
-  });
-}
-
-function showSkeletons() {
-  // Use CSS variable for skeleton color to match theme
-  document.getElementById("grid").innerHTML = Array(8).fill(0).map(() => `
-    <div class="flex flex-col gap-2">
-        <div class="aspect-video rounded-xl skeleton opacity-50"></div>
-        <div class="h-4 w-3/4 rounded skeleton opacity-30 mt-1"></div>
-    </div>
-  `).join('');
-}
-
-function removeSkeletons() {
-  if(document.querySelector('.skeleton')) document.getElementById("grid").innerHTML = "";
-}
-
-let debounceTimer;
-document.getElementById("search").addEventListener("input", (e) => {
-  clearTimeout(debounceTimer);
-  debounceTimer = setTimeout(() => { state.search = e.target.value; fetchVideos(true); }, 500);
-});
-
-// Infinite Scroll
-window.addEventListener("scroll", () => {
-  if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 500) fetchVideos(false);
-});
-
-// Start
-initAuth();
-fetchVideos();
-</script>
+<script src="/assets/js/feed.js"></script>
 </body>
 </html>

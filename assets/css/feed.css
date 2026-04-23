@@ -1,0 +1,23 @@
+
+  html { scroll-behavior: smooth; }
+  :root {
+    --bg-primary: #ffffff; --bg-secondary: rgba(240,240,240,0.7);
+    --glass-border: rgba(0,0,0,0.1); --text-main: #0f0f0f;
+    --text-muted: #606060; --accent: #ff0000; --card-hover: rgba(0,0,0,0.05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg-primary: #0f0f0f; --bg-secondary: rgba(39,39,39,0.6);
+      --glass-border: rgba(255,255,255,0.1); --text-main: #ffffff;
+      --text-muted: #aaaaaa; --accent: #ff0000; --card-hover: rgba(255,255,255,0.1);
+    }
+  }
+  body { background: var(--bg-primary); color: var(--text-main); transition: background 0.3s, color 0.3s; }
+  .glass-panel { background: var(--bg-secondary); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid var(--glass-border); }
+  @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+  .skeleton { background: linear-gradient(90deg, var(--bg-secondary) 25%, var(--glass-border) 50%, var(--bg-secondary) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 0.75rem; }
+  ::-webkit-scrollbar { width: 8px; } ::-webkit-scrollbar-track { background: var(--bg-primary); } ::-webkit-scrollbar-thumb { background: var(--text-muted); border-radius: 4px; opacity: 0.5; }
+  .search-popup { transform: translateY(-20px); opacity: 0; transition: transform 0.2s, opacity 0.2s; pointer-events: none; }
+  .search-popup.active { transform: translateY(0); opacity: 1; pointer-events: auto; }
+  .fade-in { animation: fadeIn 0.3s ease forwards; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }

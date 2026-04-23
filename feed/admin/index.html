@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin | Unscplay</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link rel="stylesheet" href="/assets/css/admin.css">
+
+<link rel="icon" type="image/png" href="/assets/img/logo.webp">
+</head>
+
+<body class="font-sans antialiased min-h-screen flex flex-col">
+
+<!-- TOP BAR -->
+<nav class="sticky top-0 z-40 glass-panel px-6 py-4 transition-colors duration-300">
+  <div class="max-w-7xl mx-auto flex justify-between items-center">
+    
+    <!-- Logo -->
+    <div class="flex items-center gap-3 cursor-pointer" onclick="window.location.href='index.html'">
+      <div class="w-8 h-8 bg-[var(--accent)] rounded-lg flex items-center justify-center text-white shadow-lg">
+        <i class="fa-solid fa-shield-halved text-sm"></i>
+      </div>
+      <h1 class="text-xl font-bold tracking-wide hidden sm:block text-[var(--text-main)]">Admin<span style="color:var(--accent)">Panel</span></h1>
+    </div>
+
+    <!-- RIGHT ACTIONS -->
+    <div class="flex items-center gap-4">
+      <!-- Theme Selector -->
+      <div class="relative group">
+        <button class="w-9 h-9 rounded-full flex items-center justify-center hover:bg-[var(--input-bg)] text-[var(--text-main)] transition-colors">
+          <i class="fa-solid fa-palette"></i>
+        </button>
+        <div class="absolute right-0 mt-2 w-40 bg-[var(--bg-secondary)] backdrop-blur-xl border border-[var(--glass-border)] rounded-xl hidden group-hover:block p-2 shadow-xl z-50">
+            <button onclick="setTheme('system')" class="w-full text-left px-3 py-2 text-sm text-[var(--text-main)] hover:bg-[var(--input-bg)] rounded-lg">System</button>
+            <button onclick="setTheme('ny-dark')" class="w-full text-left px-3 py-2 text-sm text-[var(--text-main)] hover:bg-[var(--input-bg)] rounded-lg">NY Dark</button>
+            <button onclick="setTheme('white')" class="w-full text-left px-3 py-2 text-sm text-[var(--text-main)] hover:bg-[var(--input-bg)] rounded-lg">White</button>
+        </div>
+      </div>
+
+      <!-- Admin Profile -->
+      <div class="flex items-center gap-3 pl-4 border-l border-[var(--glass-border)]">
+        <div class="text-right hidden md:block">
+          <p id="adminName" class="text-sm font-bold text-[var(--text-main)]">Loading...</p>
+          <p id="adminEmail" class="text-xs text-[var(--text-muted)]">...</p>
+        </div>
+        
+        <div id="adminAvatar" class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center font-bold text-lg text-white shadow-lg border border-[var(--glass-border)]">
+          A
+        </div>
+
+        <button onclick="logout()" class="ml-2 bg-[var(--input-bg)] hover:bg-red-600/20 hover:text-red-500 border border-[var(--glass-border)] text-[var(--text-muted)] px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2">
+          <i class="fa-solid fa-right-from-bracket"></i> <span class="hidden sm:inline">Logout</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- MAIN CONTENT -->
+<div class="flex-grow p-4 sm:p-6 max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+  <!-- LEFT COLUMN: ADD FORM -->
+  <div class="lg:col-span-4 xl:col-span-3">
+    <div class="glass-card p-5 rounded-xl shadow-lg sticky top-24 transition-colors duration-300">
+      <h2 class="text-lg font-bold mb-4 flex items-center gap-2 text-[var(--text-main)]">
+        <i class="fa-solid fa-plus-circle text-[var(--accent)]"></i> Add Video
+      </h2>
+
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-[var(--text-muted)] uppercase mb-1">YouTube ID</label>
+          <input id="videoId" class="w-full bg-[var(--input-bg)] border border-[var(--glass-border)] rounded-lg px-3 py-2 focus:border-[var(--accent)] focus:outline-none transition text-sm text-[var(--text-main)]" placeholder="e.g. dQw4w9WgXcQ">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-[var(--text-muted)] uppercase mb-1">Title</label>
+          <input id="title" class="w-full bg-[var(--input-bg)] border border-[var(--glass-border)] rounded-lg px-3 py-2 focus:border-[var(--accent)] focus:outline-none transition text-sm text-[var(--text-main)]" placeholder="Video Title">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-[var(--text-muted)] uppercase mb-1">Duration</label>
+          <input id="duration" class="w-full bg-[var(--input-bg)] border border-[var(--glass-border)] rounded-lg px-3 py-2 focus:border-[var(--accent)] focus:outline-none transition text-sm text-[var(--text-main)]" placeholder="10:00">
+        </div>
+
+        <button onclick="addVideo()" class="w-full bg-[var(--accent)] hover:opacity-90 text-white font-bold py-2.5 rounded-lg transition mt-2 shadow-lg shadow-red-900/20">
+          Publish Video
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT COLUMN: VIDEO LIST -->
+  <div class="lg:col-span-8 xl:col-span-9">
+    <div class="glass-card rounded-xl shadow-lg overflow-hidden flex flex-col h-[calc(100vh-140px)] transition-colors duration-300">
+      
+      <!-- List Header -->
+      <div class="p-4 border-b border-[var(--glass-border)] flex justify-between items-center bg-[var(--bg-secondary)]/50">
+        <h2 class="font-bold flex items-center gap-2 text-[var(--text-main)]">
+          <i class="fa-solid fa-film text-[var(--text-muted)]"></i> Video Library
+        </h2>
+        <span id="totalCount" class="bg-[var(--input-bg)] text-xs px-2 py-1 rounded text-[var(--text-muted)] border border-[var(--glass-border)]">0 Videos</span>
+      </div>
+
+      <!-- Scrollable List -->
+      <div class="overflow-y-auto p-2 space-y-2 flex-grow custom-scrollbar" id="videosList">
+        <!-- Skeleton Loader -->
+        <div class="p-4 text-center text-[var(--text-muted)]">
+          <i class="fa-solid fa-circle-notch fa-spin text-2xl"></i>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<!-- EDIT MODAL -->
+<div id="editModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center opacity-0 transition-opacity duration-300">
+  <div class="glass-card p-6 rounded-xl w-full max-w-md shadow-2xl transform scale-95 transition-transform duration-300" id="editBox">
+    <h2 class="text-xl font-bold mb-4 text-[var(--text-main)]">Edit Video Details</h2>
+
+    <div class="space-y-3">
+      <input id="editDbId" type="hidden"> <!-- MongoDB _id -->
+      
+      <div>
+        <label class="text-xs text-[var(--text-muted)] uppercase font-bold">YouTube ID</label>
+        <input id="editYtId" class="w-full bg-[var(--input-bg)] border border-[var(--glass-border)] rounded px-3 py-2 mt-1 focus:border-[var(--accent)] outline-none text-[var(--text-main)]">
+      </div>
+      
+      <div>
+        <label class="text-xs text-[var(--text-muted)] uppercase font-bold">Title</label>
+        <input id="editTitle" class="w-full bg-[var(--input-bg)] border border-[var(--glass-border)] rounded px-3 py-2 mt-1 focus:border-[var(--accent)] outline-none text-[var(--text-main)]">
+      </div>
+
+      <div>
+        <label class="text-xs text-[var(--text-muted)] uppercase font-bold">Duration</label>
+        <input id="editDuration" class="w-full bg-[var(--input-bg)] border border-[var(--glass-border)] rounded px-3 py-2 mt-1 focus:border-[var(--accent)] outline-none text-[var(--text-main)]">
+      </div>
+    </div>
+
+    <div class="flex gap-3 mt-6">
+      <button onclick="saveEdit()" class="flex-1 bg-[var(--accent)] hover:opacity-90 py-2 rounded font-bold transition text-white">Save Changes</button>
+      <button onclick="closeModal()" class="flex-1 bg-[var(--input-bg)] hover:bg-[var(--glass-border)] py-2 rounded transition text-[var(--text-main)] border border-[var(--glass-border)]">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div id="toast-container"></div>
+
+<script src="/assets/js/admin.js"></script>
+
+</body>
+</html>

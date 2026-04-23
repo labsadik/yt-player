@@ -1,0 +1,43 @@
+
+  html { scroll-behavior: smooth; }
+  :root {
+    --bg-primary: #ffffff; --bg-secondary: rgba(240,240,240,0.8);
+    --glass-border: rgba(0,0,0,0.1); --text-main: #0f0f0f;
+    --text-muted: #606060; --accent: #ff0000; --accent-hover: #cc0000;
+    --shadow: 0 4px 30px rgba(0,0,0,0.1);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg-primary: #0f0f0f; --bg-secondary: rgba(30,30,30,0.7);
+      --glass-border: rgba(255,255,255,0.1); --text-main: #ffffff;
+      --text-muted: #aaaaaa; --accent: #ff0000; --accent-hover: #ff3333;
+      --shadow: 0 4px 30px rgba(0,0,0,0.5);
+    }
+  }
+  body { background: var(--bg-primary); color: var(--text-main); font-family: 'Inter', system-ui, sans-serif; transition: background 0.3s, color 0.3s; overflow-x: hidden; }
+  .glass-panel { background: var(--bg-secondary); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid var(--glass-border); box-shadow: var(--shadow); }
+  ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: var(--text-muted); border-radius: 10px; opacity: 0.5; }
+  .player-container { background: #000; position: relative; overflow: hidden; user-select: none; box-shadow: 0 10px 40px rgba(0,0,0,0.3); }
+  #yt-api-div { position: absolute; inset: 0; z-index: 10; pointer-events: none; }
+  .custom-controls { position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(to top, rgba(0,0,0,0.8), transparent); padding: 20px 15px 15px; opacity: 0; transition: opacity 0.3s; display: flex; flex-direction: column; gap: 10px; z-index: 50; pointer-events: none; }
+  .player-container:hover .custom-controls, .player-container.paused .custom-controls { opacity: 1; pointer-events: auto; }
+  .progress-container { width: 100%; height: 4px; background: rgba(255,255,255,0.3); cursor: pointer; position: relative; border-radius: 2px; }
+  .progress-played { position: absolute; inset: 0 auto 0 0; background: var(--accent); width: 0%; border-radius: 2px; pointer-events: none; }
+  .scrubber-handle { position: absolute; top: 50%; transform: translate(-50%,-50%); width: 12px; height: 12px; background: #fff; border-radius: 50%; left: 0%; opacity: 0; transition: opacity 0.15s; pointer-events: none; }
+  .progress-container:hover .scrubber-handle { opacity: 1; }
+  .start-overlay { position: absolute; inset: 0; background-size: cover; background-position: center; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 40; background-color: #000; }
+  .start-overlay::before { content: ''; position: absolute; inset: 0; background: rgba(0,0,0,0.4); }
+  .center-btn-container { position: relative; width: 68px; height: 48px; z-index: 41; display: flex; align-items: center; justify-content: center; }
+  .loader-spinner { width: 40px; height: 40px; border: 3px solid rgba(255,255,255,0.1); border-left-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; position: absolute; }
+  .big-play-btn { width: 68px; height: 48px; background: var(--accent); border-radius: 12px; display: flex; align-items: center; justify-content: center; transition: transform 0.2s; box-shadow: 0 0 30px var(--accent); opacity: 0; transform: scale(0.8); }
+  .start-overlay.ready .loader-spinner { display: none; }
+  .start-overlay.ready .big-play-btn { opacity: 1; transform: scale(1); }
+  .start-overlay.ready:hover .big-play-btn { transform: scale(1.1); }
+  @keyframes spin { 0% { transform: rotate(0); } 100% { transform: rotate(360deg); } }
+  .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .search-popup { transform: translateY(-20px); opacity: 0; transition: transform 0.2s, opacity 0.2s; pointer-events: none; }
+  .search-popup.active { transform: translateY(0); opacity: 1; pointer-events: auto; }
+  .fade-in { animation: fadeIn 0.25s ease forwards; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .skeleton { background: linear-gradient(90deg, var(--bg-secondary) 25%, var(--glass-border) 50%, var(--bg-secondary) 75%); background-size: 200% 100%; animation: shimmer 1.2s infinite; border-radius: 0.5rem; }
+  @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
